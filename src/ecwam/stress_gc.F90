@@ -39,7 +39,6 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
       IMPLICIT NONE
 
 #include "ns_gc.intfb.h"
-#include "gc_dispersion.h"
 
       REAL(KIND=JWRB), INTENT(IN) :: ANG_GC  ! factor to account for angular spreading of the input.
       REAL(KIND=JWRB), INTENT(IN) :: USTAR ! friction velocity
@@ -67,13 +66,25 @@ REAL(KIND=JWRB) FUNCTION STRESS_GC(ANG_GC, USTAR, Z0, Z0MIN, HALP, RNFAC)
       REAL(KIND=JWRB) :: GAMNORMA ! RENORMALISATION FACTOR OF THE GROWTH RATE
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: GAM_W
-   
+
+      REAL(KIND=JWRB) :: XWNB
+      REAL(KIND=JWRB) :: FOMEG_GC, FVG_GC, FC_GC
+
 !     INCLUDE FUNCTIONS FROM GRAVITY-CAPILLARY DISPERSION REALTIONS
 
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('STRESS_GC',0,ZHOOK_HANDLE)
 
+      ! DISPERSION RELATION: 
+      FOMEG_GC(XWNB)=SQRT(G*XWNB+SURFT*XWNB**3)
+      
+      ! GROUP SPEED:
+      FVG_GC(XWNB)=0.5_JWRB/FOMEG_GC(XWNB)*(G+3.0_JWRB*SURFT*XWNB**2)
+      
+      ! PHASE SPEED:
+      FC_GC(XWNB)=FOMEG_GC(XWNB)/XWNB
+   
 !*    1.0  DETERMINE GRAV_CAP SPECTRUM, TAUWHF.
 !          ------------------------------------
 
