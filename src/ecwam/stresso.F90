@@ -107,7 +107,7 @@
       LOGICAL, INTENT(IN) :: LLPHIWA
 
 
-      INTEGER(KIND=JWIM) :: IJ, M, K, I, J, II, MAXIJ
+      INTEGER(KIND=JWIM) :: IJ, M, K, I, J
 
       REAL(KIND=JWRB) :: TAUTOUS2
       REAL(KIND=JWRB) :: COSW, FCOSW2
@@ -126,8 +126,6 @@
 ! ----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
-
-      MAXIJ = MAXVAL(MIJ(:))
 
       DO IJ=KIJS,KIJL
         PHIWA(IJ)   = 0.0_JWRB
@@ -152,7 +150,7 @@
 
 !*    CALCULATE LOW-FREQUENCY CONTRIBUTION TO STRESS AND ENERGY FLUX (positive sinput).
 !     ---------------------------------------------------------------------------------
-      DO M=1,MAXIJ
+      DO M=1,NFRE
 !     THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
         K=1
         DO IJ=KIJS,KIJL
@@ -179,7 +177,7 @@
       ENDDO
 
       IF ( LLPHIWA ) THEN
-        DO M=1,MAXIJ
+        DO M=1,NFRE
 !       THE INTEGRATION ONLY UP TO FR=MIJ SINCE RHOWGDFTH=0 FOR FR>MIJ
           K=1
           DO IJ=KIJS,KIJL
