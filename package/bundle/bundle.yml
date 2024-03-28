@@ -7,7 +7,7 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_OMP=ON
           ENABLE_SINGLE_PRECISION=OFF
           ENABLE_ACC=OFF 
-
+          ENABLE_CUDA=OFF
 
 projects :
 
