@@ -455,7 +455,7 @@ ecwam_target_fortran_module_directory(
     INSTALL_DIRECTORY module/${ecwam}
 )
 
-if( HAVE_ACC )
+if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_compile_options( ${ecwam} PUBLIC "-gpu=gvmode,maxregcount:128" )
 endif()
 
