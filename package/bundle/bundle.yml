@@ -8,6 +8,7 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_SINGLE_PRECISION=OFF
           ENABLE_ACC=OFF 
           ENABLE_CUDA=OFF
+          eccodes_ROOT=${SOURCE_DIR}/eccodes/build
 
 projects :
 
@@ -20,6 +21,7 @@ projects :
         git     : https://github.com/ecmwf/eccodes
         version : master
         cmake   : ENABLE_MEMFS=ON
+        bundle  : false
 
     - fiat :
         git     : https://github.com/ecmwf-ifs/fiat 
