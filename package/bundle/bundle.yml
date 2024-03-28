@@ -29,13 +29,13 @@ projects :
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git
-        version : v0.2.2
+        version : naan-lumi
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : main
+        version : naan-lumi
         optional: true
         require : ecbuild
         cmake   : >
