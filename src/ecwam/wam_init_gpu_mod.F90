@@ -13,11 +13,17 @@
 #ifdef _OPENACC
              USE OPENACC
 #endif
+             USE, INTRINSIC :: ISO_FORTRAN_ENV, ONLY : INT64
              USE PARKIND_WAVE, ONLY : JWIM
              IMPLICIT NONE
  
              INTEGER(KIND=JWIM), INTENT(IN) :: IRANK
-             INTEGER :: DEVTYPE, DEVNUM, DEV
+#ifdef _CRAYFTN
+             INTEGER(KIND=INT64) :: DEVTYPE
+#else
+             INTEGER :: DEVTYPE
+#endif
+             INTEGER :: DEVNUM, DEV
         
         
 #ifdef _OPENACC
