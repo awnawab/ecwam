@@ -70,7 +70,7 @@
       IMPLICIT NONE
 
 #include "abort1.intfb.h"
-#include "taut_z0.intfb.h"
+!#include "taut_z0.intfb.h"
 #include "z0wave.intfb.h"
 
       INTEGER(KIND=JWIM), INTENT(IN) :: KIJS, KIJL, ICODE_WND, IUSFG
@@ -93,9 +93,9 @@
 
       IF (ICODE_WND == 3) THEN
 
-        CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
-     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
-     &                US, Z0, Z0B, CHRNCK)
+!        CALL TAUT_Z0 (KIJS, KIJL, IUSFG,          &
+!     &                HALP, U10, U10DIR, TAUW, TAUWDIR, RNFAC, &
+!     &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
 
