@@ -207,7 +207,7 @@
       IF( NFRE <= 0 ) CALL WAM_ABORT( "Expected positive value for NFRE", __FILENAME__, __LINE__ )
       IF( IFRE1 <= 0 ) CALL WAM_ABORT( "Expected positive value for IFRE1",  __FILENAME__, __LINE__ )
 
-      ALLOCATE(FR(NFRE_RED))
+!      ALLOCATE(FR(NFRE_RED))
 
       CALL MFR(NFRE_RED, IFRE1, FR1, FRATIO, FR)
 
