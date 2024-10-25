@@ -13,8 +13,8 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
 projects :
 
     - ecbuild : 
-        git     : https://github.com/ecmwf/ecbuild
-        version : master
+        git     : https://github.com/awnawab/ecbuild.git
+        version : feature/purge-compiler-flags
         bundle  : false
 
     - eccodes :

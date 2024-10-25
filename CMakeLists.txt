@@ -20,7 +20,6 @@ if( NOT ECWAM_PROJECT_NAME )
 endif()
 
 string( TOUPPER ${ECWAM_PROJECT_NAME} PNAME )
-set( ${PNAME}_ECBUILD_COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_init_flags.cmake CACHE FILEPATH "")
 project( ${ECWAM_PROJECT_NAME} LANGUAGES Fortran C CXX )
 
 include( ecwam_macros )
@@ -153,7 +152,11 @@ ecbuild_add_option( FEATURE GPU_AWARE_MPI
 
 ### Sources
 
-include(ecwam_compile_flags)
+# Trigger the use of <PNAME>_LANG_FLAGS in ecbuild
+ecbuild_override_compiler_flags(
+  COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_compile_flags.cmake
+)
+
 add_subdirectory(src)
 add_subdirectory(share)
 
