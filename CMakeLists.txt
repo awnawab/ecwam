@@ -152,10 +152,9 @@ ecbuild_add_option( FEATURE GPU_AWARE_MPI
 
 ### Sources
 
+set( ${PNAME}_COMPILER_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_compile_flags.cmake CACHE STRING "Path to cmake script that sets compiler flags" )
 # Trigger the use of <PNAME>_LANG_FLAGS in ecbuild
-ecbuild_override_compiler_flags(
-  COMPILE_FLAGS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ecwam_compile_flags.cmake
-)
+ecbuild_override_compiler_flags(COMPILE_FLAGS ${${PNAME}_COMPILER_FLAGS})
 
 add_subdirectory(src)
 add_subdirectory(share)
