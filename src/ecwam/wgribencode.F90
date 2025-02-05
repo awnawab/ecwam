@@ -239,6 +239,7 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'missingValue',ZMISS)
 
 !     GRIB TABLE AND PARAMETER NUMBER
+
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'paramId',ITABPAR,IERR)
       IF (IERR /= 0) THEN
         WRITE(NULERR,*) ' ************************************************************************'
@@ -287,8 +288,17 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           ENDIF
         ENDIF
       ENDIF
-      CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
-      IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
+
+      IF ( IGRIB_VERSION == 1 ) THEN
+        CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'level',IDUM,KRET=IRET)
+        IF ( IRET == JPGRIB_SUCCESS ) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
+      ELSE
+        SELECT CASE(ITABPAR)
+        CASE(140233,140245,140249)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfLevel','heightAboveSea')
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'level',KLEV)
+        END SELECT
+      ENDIF
 
       IF (.NOT. LGRHDIFS .OR. &
      &   (MARSTYPE == 'an' .AND. IFCST == 0) .OR. &
