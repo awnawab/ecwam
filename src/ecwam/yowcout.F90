@@ -71,6 +71,8 @@
       INTEGER(KIND=JWIM) :: ITOBOUT(JPPFLAG)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: INFOBOUT
 
+      !$acc declare create(ITOBOUT, NIPRMOUT)
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *NTRAIN*    INTEGER   MAXIMUM NUMBER OF SWELL TRAINS.

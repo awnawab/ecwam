@@ -94,6 +94,8 @@
       REAL(KIND=JWRB) :: TIME_PROPAG = 0._JWRB
       REAL(KIND=JWRB) :: TIME_PHYS = 0._JWRB
 
+      !$acc declare create(LBIWBK)
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !      *MARSTYPE*  CHAR*2    CHARACTER STRING INDICATING THE CURRENT

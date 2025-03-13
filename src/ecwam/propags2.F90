@@ -95,12 +95,15 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          ! ! $acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$omp target teams distribute collapse(2) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
+          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+              !$omp parallel do simd
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
@@ -115,6 +118,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M,-1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+                !$omp parallel do simd
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
@@ -124,6 +128,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M, 1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+                !$omp parallel do simd
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
@@ -131,12 +136,13 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ENDDO
-          !$acc end kernels 
+          !$omp end target teams distribute
+          ! ! $acc end kernels 
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
-#ifdef _OPENACC
+#ifdef WAM_GPU
            CALL WAM_ABORT("PROPAGS2: BRANCH NOT YET PORTED FOR GPU EXECUTION")
 #endif
 

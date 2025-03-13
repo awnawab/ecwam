@@ -71,6 +71,8 @@
       REAL(KIND=JWRB), ALLOCATABLE :: TT_4P(:,:,:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: TFAKH(:,:)
 
+      !$acc declare create(NMAX)
+
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
 !

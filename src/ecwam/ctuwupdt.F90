@@ -91,21 +91,29 @@ IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
-  !$acc kernels
+  ! ! $acc kernels
+  !$omp target teams distribute parallel do simd
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
-  !$acc end kernels
+  !$omp end target teams distribute parallel do simd
+  ! ! $acc end kernels
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc update device(JXO, JYO, KCR, KPM)
- !$acc kernels
+! !$acc update device(JXO, JYO, KCR, KPM)
+!$omp target update to(JXO, JYO, KCR, KPM)
+
+! !$acc data copyin(COSTH, SINTH)
+!$omp target data map(to:COSTH, SINTH)
+ 
+ ! ! $acc kernels
+ !$omp target teams distribute parallel do simd private(KM1, KP1)
   DO K=1,NANG
 
     KM1 = K-1
@@ -157,8 +165,10 @@ IF (LFRSTCTU) THEN
       ENDIF
     ENDIF
   ENDDO
-  !$acc end kernels
-
+  !$omp end target teams distribute parallel do simd
+  ! ! $acc end kernels
+!!$acc end data
+!$omp end target data
   LFRSTCTU = .FALSE.
 
 ENDIF
@@ -189,27 +199,27 @@ ENDIF
 ! SOME INITIALISATION FOR *CTUW*
 !! NPROMA=NPROMA_WAM
    MTHREADS=1
-#ifndef _OPENACC
+#ifndef WAM_GPU
    MTHREADS=OML_GET_MAX_THREADS()
-#endif /*_OPENACC*/
+#endif
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-#ifdef _OPENACC
+#ifdef WAM_GPU
 !$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
 #else
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
 DO JKGLO = IJS, IJL, NPROMA
   KIJS=JKGLO
   KIJL=MIN(KIJS+NPROMA-1,IJL)
   CALL CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
  &                  WLATM1, WCORM1, DP)
 ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
 !$acc end data
 #else
 !$OMP  END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 
 ! COMPUTES THE WEIGHTS
@@ -256,13 +266,14 @@ ENDIF
 
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 
-!$acc parallel loop independent collapse(4)
+! ! $acc parallel loop independent collapse(4)
+!$omp target teams distribute parallel do simd collapse(4)
 DO IC=1,2
   DO ICL=1,2
     DO K=1,NANG
       DO M=1,NFRE_RED
         LLWLATN(K,M,IC,ICL)=.FALSE.
-        !$acc loop
+        ! ! $acc loop
         DO IJ=IJS,IJL
           IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
             LLWLATN(K,M,IC,ICL)=.TRUE.
@@ -273,14 +284,16 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
-!$acc end parallel
+!$omp end target teams distribute parallel do simd
+! ! $acc end parallel
 
-!$acc parallel loop independent collapse(3)
+! ! $acc parallel loop independent collapse(3)
+!$omp target teams distribute parallel do simd collapse(3)
 DO IC=1,2
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWLONN(K,M,IC)=.FALSE.
-      !$acc loop
+      ! ! $acc loop
       DO IJ=IJS,IJL
         IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWLONN(K,M,IC)=.TRUE.
@@ -290,15 +303,17 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
-!$acc end parallel
+! ! $acc end parallel
+!$omp end target teams distribute parallel do simd
 
-!$acc parallel loop independent collapse(4)
+! ! $acc parallel loop independent collapse(4)
+!$omp target teams distribute parallel do simd collapse(4)
 DO ICL=1,2
   DO ICR=1,4
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWCORN(K,M,ICR,ICL)=.FALSE.
-        !$acc loop
+        ! ! $acc loop
         DO IJ=IJS,IJL
           IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
             LLWCORN(K,M,ICR,ICL)=.TRUE.
@@ -309,14 +324,16 @@ DO ICL=1,2
     ENDDO
   ENDDO
 ENDDO
-!$acc end parallel
+! ! $acc end parallel
+!$omp end target teams distribute parallel do simd
 
-!$acc parallel loop independent collapse(3)
+! ! $acc parallel loop independent collapse(3)
+!$omp target teams distribute parallel do simd collapse(3)
 DO IC=-1,1
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWKPMN(K,M,IC)=.FALSE.
-      !$acc loop
+      ! ! $acc loop
       DO IJ=IJS,IJL
         IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWKPMN(K,M,IC)=.TRUE.
@@ -326,15 +343,17 @@ DO IC=-1,1
     ENDDO
   ENDDO
 ENDDO
-!$acc end parallel
+!$omp end target teams distribute parallel do simd
+! ! $acc end parallel
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
-!$acc parallel loop independent collapse(3)
+! ! $acc parallel loop independent collapse(3)
+!$omp target teams distribute parallel do simd collapse(3)
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWMPMN(K,M,IC)=.FALSE.
-        !$acc loop
+        ! ! $acc loop
         DO IJ=IJS,IJL
           IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWMPMN(K,M,IC)=.TRUE.
@@ -344,7 +363,8 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
-!$acc end parallel
+!$omp end target teams distribute parallel do simd 
+! ! $acc end parallel
 ENDIF
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)

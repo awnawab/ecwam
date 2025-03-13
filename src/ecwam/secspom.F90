@@ -137,7 +137,7 @@
       ID=JD(KIJS)
       DO IJ=KIJS+1,KIJL
          LLSAMEDPTH=(LLSAMEDPTH.AND.(JD(IJ-1).EQ.JD(IJ)))
-         IF (.NOT.LLSAMEDPTH) EXIT
+         ! IF (.NOT.LLSAMEDPTH) EXIT
       ENDDO
 
       DO M=1,NFRE
