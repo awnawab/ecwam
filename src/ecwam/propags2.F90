@@ -105,7 +105,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 
   ! $acc data copyin(ND3S, ND3E)
 
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          ! ! $acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$omp target teams distribute parallel do simd collapse(2)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
@@ -141,7 +142,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ENDDO
-          !$acc end kernels 
+          !$omp end target teams distribute parallel do simd
+          ! ! $acc end kernels 
           ! $acc end data
 
         ELSE

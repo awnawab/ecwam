@@ -60,7 +60,8 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef _OPENACC
-!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+! ! $acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+!$omp target teams distribute private(ICHNK, KIJS, IJSB, KIJL, IJLB)
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M)
 #endif /*_OPENACC*/
@@ -70,7 +71,8 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         KIJL = KIJL4CHNK(ICHNK)
         IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-!$acc loop        
+! ! $acc loop        
+!$omp parallel do
         DO M = 1, NFRE_RED
           BUFFER_EXT(IJSB:IJLB, M) = WAVNUM(KIJS:KIJL, M,ICHNK)
           BUFFER_EXT(IJSB:IJLB, M + NFRE_RED) = CGROUP(KIJS:KIJL, M,ICHNK)
@@ -84,7 +86,8 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         BUFFER_EXT(IJSB:IJLB, 3*NFRE_RED+5) = VCUR(KIJS:KIJL,ICHNK)
       ENDDO
 #ifdef _OPENACC
-!$acc end kernels
+! ! $acc end kernels
+!$omp end target teams distribute
 #else
 !$OMP END PARALLEL DO
 #endif /*_OPENACC*/
@@ -95,16 +98,26 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       IF (LHOOK) CALL DR_HOOK('MPI_TIME',0,ZHOOK_HANDLE_MPI)
       CALL MPEXCHNG(BUFFER_EXT, 3*NFRE_RED+5, 1, 1)
       IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
-      !$acc kernels present(WVPRPT_LAND)
-      BUFFER_EXT(NSUP+1,1:NFRE_RED) = WVPRPT_LAND%WAVNUM(1:NFRE_RED)
-      BUFFER_EXT(NSUP+1,NFRE_RED+1:2*NFRE_RED) = WVPRPT_LAND%CGROUP(1:NFRE_RED)
-      BUFFER_EXT(NSUP+1,2*NFRE_RED+1:3*NFRE_RED) = WVPRPT_LAND%OMOSNH2KD(1:NFRE_RED)
+      ! ! $acc kernels present(WVPRPT_LAND)
+      !$omp target teams distribute parallel do simd map(to: WVPRPT_LAND)
+      DO M = 1, NFRE_RED
+        BUFFER_EXT(NSUP+1,M) = WVPRPT_LAND%WAVNUM(M)
+        BUFFER_EXT(NSUP+1,NFRE_RED+M) = WVPRPT_LAND%CGROUP(M)
+        BUFFER_EXT(NSUP+1,2*NFRE_RED+M) = WVPRPT_LAND%OMOSNH2KD(M)
+      ENDDO
+      !$omp end target teams distribute parallel do simd
+
+      !$omp target
+      ! BUFFER_EXT(NSUP+1,1:NFRE_RED) = WVPRPT_LAND%WAVNUM(1:NFRE_RED)
+      ! BUFFER_EXT(NSUP+1,NFRE_RED+1:2*NFRE_RED) = WVPRPT_LAND%CGROUP(1:NFRE_RED)
+      ! BUFFER_EXT(NSUP+1,2*NFRE_RED+1:3*NFRE_RED) = WVPRPT_LAND%OMOSNH2KD(1:NFRE_RED)
       BUFFER_EXT(NSUP+1,3*NFRE_RED+1) = 0.0_JWRB
       BUFFER_EXT(NSUP+1,3*NFRE_RED+2) = 0.0_JWRB 
       BUFFER_EXT(NSUP+1,3*NFRE_RED+3) = BATHYMAX
       BUFFER_EXT(NSUP+1,3*NFRE_RED+4) = 0.0_JWRB 
       BUFFER_EXT(NSUP+1,3*NFRE_RED+5) = 0.0_JWRB 
-      !$acc end kernels
+      !$omp end target
+      ! ! $acc end kernels
 
 !$acc end data
 

@@ -198,7 +198,8 @@ IF (CDATE >= CDTIMPNEXT) THEN
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
 #ifdef _OPENACC
-!$acc kernels present(MIJ,VARS_4D)
+! ! $acc kernels present(MIJ,VARS_4D)
+!$omp target teams distribute thread_limit( NPROMA_WAM ) present(MIJ,VARS_4D)
 #else
 !$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
 #endif
@@ -208,7 +209,8 @@ IF (CDATE >= CDTIMPNEXT) THEN
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
 #ifdef _OPENACC
-!$acc end kernels
+! ! $acc end kernels
+!$omp end target teams distribute
 #else
 !$OMP      END PARALLEL DO
 #endif

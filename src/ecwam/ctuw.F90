@@ -143,18 +143,21 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
 !$acc data copyin(SINTH, COSTH)
-!$acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+
+! ! $acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+!$omp target
           DO M = MSTART, MEND
 
 !*          LOOP OVER DIRECTIONS.
 !           ---------------------
-!$acc loop private(CGX,CGY)
+! ! $acc loop private(CGX,CGY)
 
+!$omp parallel do collapse(2) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
             DO K=1,NANG
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
-!$acc loop private(CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+! ! $acc loop private(CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
                   DO IJ=KIJS,KIJL
 !                   IC = 1 
 
@@ -364,8 +367,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO  ! END LOOP OVER DIRECTIONS
 
           ENDDO  ! END LOOP OVER FREQUENCIES
+!$omp end target
+! ! $acc end kernels
 
-!$acc end kernels
 !$acc end data
 
       ELSE
@@ -413,7 +417,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 ! ! $acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
 !$acc data copyin(SINTH, COSPH, SINPH)
-!$acc kernels
+! ! $acc kernels
+      ! need for privatising some arrays in order to use "teams distribute"
+      !$omp target
+      ! teams distribute private(KP1, KM1, SP, SM, K, KIJS,KIJL, MSTART, MEND, M, IJ)
+      ! teams distribute private(KP1, KM1, SP, SM)
       DO K=1,NANG
         KP1 = K+1
         IF (KP1 > NANG) KP1 = 1
@@ -425,7 +433,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         SP  = DELTH0*(SINTH(K)+SINTH(KP1))/R
         SM  = DELTH0*(SINTH(K)+SINTH(KM1))/R
 
-!$acc loop private(jh,tanph)
+! ! $acc loop private(jh,tanph)
+        !$omp parallel do private(jh,tanph)
         DO IJ = KIJS,KIJL
           JH=BLK2GLO%KXLT(IJ)
           TANPH = SINPH(JH)/COSPH(JH)
@@ -436,13 +445,15 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      COMPUTE DEPTH REFRACTION.
 !       -------------------------
         IF (IREFRA == 1) THEN
-!$acc loop
+! ! $acc loop
+!$omp parallel do
           DO IJ = KIJS,KIJL
             DRDP(IJ) = (THDD(IJ,K) + THDD(IJ,KP1))*DELTH0
             DRDM(IJ) = (THDD(IJ,K) + THDD(IJ,KM1))*DELTH0
           ENDDO
         ELSE
-!$acc loop
+! ! $acc loop
+!$omp parallel do
           DO IJ = KIJS,KIJL
             DRDP(IJ) =  0.0_JWRB
             DRDM(IJ) =  0.0_JWRB
@@ -453,13 +464,15 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !       ---------------------------
 
         IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
-!$acc loop
+! ! $acc loop
+!$omp parallel do
           DO IJ = KIJS,KIJL
             DRCP(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KP1))*DELTH0
             DRCM(IJ) = CURMASK(IJ)*(THDC(IJ,K) + THDC(IJ,KM1))*DELTH0
           ENDDO
         ELSE
-!$acc loop
+! ! $acc loop
+!$omp parallel do
           DO IJ = KIJS,KIJL
             DRCP(IJ) = 0.0_JWRB 
             DRCM(IJ) = 0.0_JWRB
@@ -473,7 +486,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      NO DEPTH REFRACTION.
 !       -------------------
         IF (IREFRA == 0) THEN
-!$acc loop collapse(2) private(DTHP,DTHM)
+!! $acc loop collapse(2) private(DTHP,DTHM)
+!$omp parallel do collapse(2) private(DTHP,DTHM)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M) + DRCP(IJ)
@@ -489,7 +503,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ELSE
 !*      SHALLOW WATER AND DEPTH REFRACTION.
 !       -----------------------------------
-!$acc loop collapse(2) private(DTHP,DTHM)
+! ! $acc loop collapse(2) private(DTHP,DTHM)
+!$omp parallel do collapse(2) private(DTHP,DTHM)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
               DTHP = DRGP(IJ)*CGROUP_EXT(IJ,M)+OMOSNH2KD_EXT(IJ,M)*DRDP(IJ)+DRCP(IJ)
@@ -511,7 +526,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
           DELFR0 = 0.25_JWRB*DELPRO/((FRATIO-1)*ZPI)
 
-!$acc loop private(MP1,MM1,DFP,DFM) private(DTHP,DTHM)
+! ! $acc loop private(MP1,MM1,DFP,DFM) private(DTHP,DTHM)
+!$omp parallel do private(MP1,MM1,DFP,DFM,DTHP,DTHM)
             DO M = MSTART, MEND
               MP1 = MIN(NFRE_RED,M+1)
               MM1 = MAX(1,M-1)
@@ -529,9 +545,13 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDIF
 
       ENDDO  ! END LOOP ON DIRECTIONS
+!$omp end target
+! target teams distribute
+! teams distribute
 
 ! ! $acc end parallel
-!$acc end kernels
+! ! $acc end kernels
+
 !$acc end data
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
@@ -706,13 +726,14 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!!!!INCLUDE THE BLOCKING COEFFICIENTS INTO THE WEIGHTS OF THE
 !     SURROUNDING POINTS.
 
-!$acc parallel loop collapse(3)
+! ! $acc parallel loop collapse(3)
+!$omp target teams distribute parallel do simd collapse(3)
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
 
 !           POINTS ON SURROUNDING LATITUDES 
-!$acc loop collapse(2)
+! ! $acc loop collapse(2)
             DO IC=1,2
               DO ICL=1,2
                 WLATN(IJ,K,M,IC,ICL) = WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC) 
@@ -720,13 +741,13 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO
 
 !           POINTS ON SURROUNDING LONGITUDE
-!$acc loop
+! ! $acc loop
             DO IC=1,2
               WLONN(IJ,K,M,IC) = WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
             ENDDO
 
 !           SURROUNDING CORNER POINTS
-!$acc loop collapse(2)
+! ! $acc loop collapse(2)
             DO ICR=1,4
               DO ICL=1,2
                 WCORN(IJ,K,M,ICR,ICL) = WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
@@ -736,7 +757,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER GRID POINTS
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
-!$acc end parallel
+!$omp end target teams distribute parallel do simd
+! ! $acc end parallel
 
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 
