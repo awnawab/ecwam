@@ -107,7 +107,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
         IJLG = IJSG + SUM(KIJL4CHNK) - 1
 
         MTHREADS=1
-#ifndef _OPENACC
+#ifndef WAM_GPU
         MTHREADS=OML_GET_MAX_THREADS()
 #endif
         NPROMA=(IJLG-IJSG+1)/MTHREADS + 1
@@ -115,12 +115,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !!! the advection schemes are still written in block structure
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifdef _OPENACC
+#ifdef WAM_GPU
         ! ! $acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
         !$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS, IJSB, KIJL, IJLB)
 #else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K)
-#endif /*_OPENACC*/
+#endif
         DO ICHNK = 1, NCHNK
           KIJS = 1
           IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -134,12 +134,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
             ENDDO
           ENDDO
         ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
         ! ! $acc end kernels
         !$omp end target teams distribute
 #else
 !$OMP   END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 !       SET THE DUMMY LAND POINT TO 0.
         ! ! $acc kernels
@@ -179,7 +179,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !          ---------------------
 
            IF (LLUPDTTD) THEN
-#ifdef _OPENACC
+#ifdef WAM_GPU
            CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
 #endif
              IF (.NOT.ALLOCATED(THDC)) ALLOCATE(THDC(IJSG:IJLG, NANG))
@@ -236,17 +236,17 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                LUPDTWGHT=.FALSE.
              ENDIF
 
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP        PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
              DO JKGLO = IJSG, IJLG, NPROMA
                KIJS=JKGLO
                KIJL=MIN(KIJS+NPROMA-1, IJLG)
                CALL PROPAGS2(FL1_EXT, FL3_EXT, NINF, NSUP, KIJS, KIJL, NANG, 1, NFRE_RED)
              ENDDO
-#ifndef _OPENACC             
+#ifndef WAM_GPU
 !$OMP        END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 !            SUB TIME STEPPING FOR FAST WAVES (only if IFRELFMAX > 0)
              IF (IFRELFMAX > 0 ) THEN
@@ -255,12 +255,12 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
                DO WHILE (ISUBST <= NSTEP_LF)
 
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc kernels loop private(KIJS, KIJL, FL1_EXT)
 !$omp target teams distribute thread_limit( NPROMA_WAM )
 #else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
-#endif /*_OPENACC*/
+#endif
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
@@ -274,20 +274,20 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
                      ENDDO
                    ENDDO
                  ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc end kernels
 !$omp end target teams distribute
 #else
 !$OMP            END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
                  IF (LHOOK) CALL DR_HOOK('MPI_TIME',0,ZHOOK_HANDLE_MPI)
                  CALL MPEXCHNG(FL1_EXT(:,:,1:IFRELFMAX), NANG, 1, IFRELFMAX)
                  IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
 
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL)
-#endif /*_OPENACC*/
+#endif
                  DO JKGLO = IJSG, IJLG, NPROMA
                    KIJS=JKGLO
                    KIJL=MIN(KIJS+NPROMA-1, IJLG)
@@ -295,9 +295,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
                    CALL PROPAGS2(FL1_EXT(:,:,1:IFRELFMAX), FL3_EXT(:,:,1:IFRELFMAX), NINF, NSUP, KIJS, KIJL, NANG, 1, IFRELFMAX)
                  ENDDO
-#ifndef _OPENACC
+#ifndef WAM_GPU
 !$OMP            END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
                  ISUBST = ISUBST + 1
 
@@ -306,7 +306,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 ENDIF  ! end sub time steps (if needed)
 
            CASE(1)
-#ifdef _OPENACC
+#ifdef WAM_GPU
            CALL WAM_ABORT("PROPAG_WAM: BRANCH NOT YET PORTED FOR GPU EXECUTION")
 #endif
              IF (L1STCALL .OR. LLCHKCFLA) LLCHKCFL=.TRUE.
@@ -358,12 +358,12 @@ ENDIF  ! end sub time steps (if needed)
 
 !!! the advection schemes are still written in block structure
 !!!  So need to convert back to the nproma_wam chuncks
-#ifdef _OPENACC
+#ifdef WAM_GPU
         ! ! $acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
         !$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS, IJSB, KIJL, IJLB)
 #else
 !$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, K, II, J)
-#endif /*_OPENACC*/
+#endif
           DO ICHNK = 1, NCHNK
             KIJS = 1
             IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -394,12 +394,12 @@ ENDIF  ! end sub time steps (if needed)
             ENDIF
 
           ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
         ! ! $acc end kernels
         !$omp end target teams distribute
 #else
 !$OMP     END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
            CALL GSTATS(1430,1)
 

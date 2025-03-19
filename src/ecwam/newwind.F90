@@ -123,7 +123,7 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
         CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc parallel loop gang present(FF_NEXT,FF_NOW) private(KIJS,KIJL) vector_length(NPROMA_WAM)
 ! ! $acc kernels
 !$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS,KIJL)
@@ -171,7 +171,7 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
           ENDDO
 
         ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc end parallel loop
 ! ! $acc end kernels
 !$omp end target teams distribute

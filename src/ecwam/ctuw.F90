@@ -283,7 +283,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !            LOOP OVER GRID POINTS
 !            ---------------------
             
-#ifndef _OPENACC
+#ifndef WAM_GPU
 
 !               FLUX VELOCITIES AT THE GRID BOX INTERFACE 
 
@@ -326,7 +326,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !                 BASIC CFL CHECKS (IN EACH DIRECTION)
 !                 ----------------
-#ifndef _OPENACC
+#ifndef WAM_GPU
                   IF (ADXP(2) > ZDELLO(KY))THEN
                     WRITE (IU06,*) '********************************'
                     WRITE (IU06,*) '* CTUW:                        *'
@@ -495,7 +495,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+#ifdef WAM_GPU
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 #endif
             ENDDO
@@ -512,7 +512,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
               WKPMN(IJ,K,M,0)=(DTHP+ABS(DTHP))+(ABS(DTHM)-DTHM)
               WKPMN(IJ,K,M,1)=-DTHP+ABS(DTHP)
               WKPMN(IJ,K,M,-1)=DTHM+ABS(DTHM)
-#ifdef _OPENACC
+#ifdef WAM_GPU
               SUMWN(IJ,K,M)=SUMWN(IJ,K,M)+WKPMN(IJ,K,M,0)
 #endif
             ENDDO
@@ -558,7 +558,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
 !!!   THE SUM IS NEEDED LATER ON !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#ifndef _OPENACC
+#ifndef WAM_GPU
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL

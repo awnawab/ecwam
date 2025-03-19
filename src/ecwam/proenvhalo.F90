@@ -59,12 +59,12 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 !$acc present(BUFFER_EXT)
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
 !$omp target teams distribute private(ICHNK, KIJS, IJSB, KIJL, IJLB)
 #else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M)
-#endif /*_OPENACC*/
+#endif
       DO ICHNK = 1, NCHNK
         KIJS = 1
         IJSB = IJFROMCHNK(KIJS, ICHNK)
@@ -85,12 +85,12 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         BUFFER_EXT(IJSB:IJLB, 3*NFRE_RED+4) = UCUR(KIJS:KIJL,ICHNK)
         BUFFER_EXT(IJSB:IJLB, 3*NFRE_RED+5) = VCUR(KIJS:KIJL,ICHNK)
       ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc end kernels
 !$omp end target teams distribute
 #else
 !$OMP END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
 #ifdef WAM_GPU
       CALL WVPRPT_LAND%GET_DEVICE_DATA_RDONLY()

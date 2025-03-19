@@ -195,7 +195,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
 
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc kernels present(MIJ,VARS_4D)
 !$omp target teams distribute parallel do map(to:MIJ,VARS_4D)
 #else
@@ -206,7 +206,7 @@ IF (CDATE >= CDTIMPNEXT) THEN
       VARS_4D%FL1(:,:,:,ICHNK) = MAX(VARS_4D%FL1(:,:,:,ICHNK), EPSMIN)
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
-#ifdef _OPENACC
+#ifdef WAM_GPU
 ! ! $acc end kernels
 !$omp end target teams distribute parallel do
 #else

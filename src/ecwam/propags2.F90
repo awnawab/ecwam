@@ -149,7 +149,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
 !       -----------------------------
-#ifdef _OPENACC
+#ifdef WAM_GPU
            CALL WAM_ABORT("PROPAGS2: BRANCH NOT YET PORTED FOR GPU EXECUTION")
 #endif
 

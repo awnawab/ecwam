@@ -120,7 +120,7 @@
 !     PACK SEND BUFFERS FOR NGBTOPE NEIGHBOURING PE's
 !     -------------------------------------------------
       CALL GSTATS(1892,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
 !$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
 !$acc copyin(NTOPELST,NTOPE,IJTOPE)
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
@@ -153,7 +153,7 @@
          ENDDO
        ENDDO
 !$OMP END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
 
       CALL GSTATS(1892,1)
 
@@ -214,7 +214,7 @@
 !     DECODE THE RECEIVED BUFFERS
 
       CALL GSTATS(1893,0)
-#ifdef _OPENACC
+#ifdef WAM_GPU
       !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
       !$acc copyin(NFROMPELST,NFROMPE,NIJSTART)
       DO INGB=1,NGBFROMPE
@@ -247,7 +247,7 @@
         ENDDO
       ENDDO
 !$OMP END PARALLEL DO
-#endif /*_OPENACC*/
+#endif
       CALL GSTATS(1893,1)
 
       KTAG=KTAG+1
