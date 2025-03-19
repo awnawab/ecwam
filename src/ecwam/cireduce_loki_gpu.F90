@@ -84,11 +84,13 @@ IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
 !           NO REDUCTION, EITHER THERE IS NO SEA ICE INFORMATION OR
 !           ALL SEA ICE COVER POINTS WILL BE MASKED
             CALL GSTATS(1493,0)
-!$acc kernels present(WVPRPT)
+!!$acc kernels present(WVPRPT)
+!$omp target teams distribute parallel do map(to:WVPRPT)
             DO ICHNK = 1, NCHNK
                WVPRPT%CIWA(:,:,ICHNK) = 1.0_JWRB
             ENDDO
-!$acc end kernels
+!$omp end target teams distribute parallel do
+!!$acc end kernels
             CALL GSTATS(1493,1)
           ENDIF
 
@@ -99,14 +101,14 @@ IF(LUPDATE_GPU_GLOBALS)THEN
 ENDIF
           CALL GSTATS(1493,0)
 !         DETERMINE THE WAVE ATTENUATION FACTOR
-!$acc data present(FF_NOW, WVPRPT)
+!$loki structured-data present(FF_NOW, WVPRPT)
 
           DO ICHNK = 1, NCHNK
             CALL CIWAF(1, NPROMA_WAM, WVPRPT%CGROUP(:,:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
 &                      FF_NOW%CITHICK(:,ICHNK), WVPRPT%CIWA(:,:,ICHNK))
           ENDDO
 
-!$acc end data
+!$loki end structured-data
           CALL GSTATS(1493,1)
         ENDIF
 
