@@ -71,7 +71,7 @@
       INTEGER(KIND=JWIM) :: ITOBOUT(JPPFLAG)
       INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:,:) :: INFOBOUT
 
-      !$acc declare create(ITOBOUT, NIPRMOUT)
+      !$loki create device(ITOBOUT, NIPRMOUT)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------
