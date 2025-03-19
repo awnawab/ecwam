@@ -12,8 +12,7 @@ set( CMAKE_Fortran_COMPILER nvfortran )
 
 set( OpenMP_C_FLAGS             "-mp -mp=bind,allcores,numa" )
 set( OpenMP_CXX_FLAGS           "-mp -mp=bind,allcores,numa" )
-set( OpenMP_Fortran_FLAGS       "-mp -mp=gpu,bind,allcores,numa" )
-# set( OpenMP_Fortran_FLAGS       "-mp -mp=gpu,bind,allcores,numa" )
+set( OpenMP_Fortran_FLAGS       "-mp -mp=gpu,bind,allcores,numa -gpu=cc80,lineinfo,fastmath,rdc" )
 
 ####################################################################
 # OpenAcc FLAGS
