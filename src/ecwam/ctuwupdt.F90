@@ -106,8 +106,11 @@ IF (LFRSTCTU) THEN
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-!$acc update device(JXO, JYO, KCR, KPM)
-!$acc data copyin(COSTH, SINTH)
+! !$acc update device(JXO, JYO, KCR, KPM)
+!$omp target update to(JXO, JYO, KCR, KPM)
+
+! !$acc data copyin(COSTH, SINTH)
+!$omp target data map(to:COSTH, SINTH)
  
  ! ! $acc kernels
  !$omp target teams distribute parallel do simd private(KM1, KP1)
@@ -164,7 +167,8 @@ IF (LFRSTCTU) THEN
   ENDDO
   !$omp end target teams distribute parallel do simd
   ! ! $acc end kernels
-!$acc end data
+!!$acc end data
+!$omp end target data
   LFRSTCTU = .FALSE.
 
 ENDIF

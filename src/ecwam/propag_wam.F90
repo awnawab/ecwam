@@ -99,8 +99,10 @@ SUBROUTINE PROPAG_WAM (BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, &
 IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
-!$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) CREATE(FL1_EXT,FL3_EXT) &
-!$acc & create(BUFFER_EXT)
+!!$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) CREATE(FL1_EXT,FL3_EXT) &
+!!$acc & create(BUFFER_EXT)
+!$omp target data map(to:FL1,WAVNUM,CGROUP,OMOSNH2KD,DEPTH,DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) &
+!$omp & target data map(alloc:FL1_EXT,FL3_EXT,BUFFER_EXT) 
       IF (NIBLO > 1) THEN
 
         IJSG = IJFROMCHNK(1,1)
@@ -406,7 +408,8 @@ ENDIF  ! end sub time steps (if needed)
         ENDIF  ! end propagation
 
       ENDIF ! more than one grid point
-!$acc end data
+!!$acc end data
+!$omp end target data
 
       L1STCALL=.FALSE.
       LLCHKCFL=.FALSE.

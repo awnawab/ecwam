@@ -55,8 +55,10 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
-!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
-!$acc present(BUFFER_EXT)
+!!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
+!!$acc present(BUFFER_EXT)
+!$omp target data map(to:WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
+!$omp & map(to:BUFFER_EXT)
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
@@ -119,7 +121,8 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       !$omp end target
       ! ! $acc end kernels
 
-!$acc end data
+!!$acc end data
+!$omp end target data
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',1,ZHOOK_HANDLE)
 

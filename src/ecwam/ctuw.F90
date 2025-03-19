@@ -142,7 +142,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
-!$acc data copyin(SINTH, COSTH)
+! ! $acc data copyin(SINTH, COSTH)
+!$omp target data map(to:SINTH, COSTH)
 
 ! ! $acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
 !$omp target
@@ -370,7 +371,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !$omp end target
 ! ! $acc end kernels
 
-!$acc end data
+! ! $acc end data
+!$omp end target data
 
       ELSE
 !*    CARTESIAN GRID.
@@ -416,7 +418,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ---------------------
 
 ! ! $acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
-!$acc data copyin(SINTH, COSPH, SINPH)
+! ! $acc data copyin(SINTH, COSPH, SINPH)
+!$omp target data map(to:SINTH, COSPH, SINPH)
 ! ! $acc kernels
       ! need for privatising some arrays in order to use "teams distribute"
       !$omp target
@@ -552,7 +555,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 ! ! $acc end parallel
 ! ! $acc end kernels
 
-!$acc end data
+! ! $acc end data
+!$omp end target data
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
