@@ -94,7 +94,7 @@
       REAL(KIND=JWRB) :: TIME_PROPAG = 0._JWRB
       REAL(KIND=JWRB) :: TIME_PHYS = 0._JWRB
 
-      !$acc declare create(LBIWBK)
+      !$loki create device(LBIWBK)
 
 !*     VARIABLE.   TYPE.     PURPOSE.
 !      ---------   -------   --------

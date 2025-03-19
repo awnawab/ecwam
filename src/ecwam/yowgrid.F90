@@ -87,5 +87,9 @@
 
 
 ! ----------------------------------------------------------------------
+      #ifdef OMPGPU
+      !$omp declare target( COSPH )
+      #else
       !$acc declare create( COSPH )
+      #endif
       END MODULE YOWGRID
