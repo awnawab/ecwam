@@ -415,6 +415,14 @@ if( HAVE_ECFLOW )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
 endif()
 
+if( HAVE_ACC OR HAVE_OMP_OFFLOAD )
+  list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_GPU)
+endif()
+
+if( HAVE_OMP_OFFLOAD )
+  list(APPEND ECWAM_PRIVATE_DEFINITIONS OMPGPU)
+endif()
+
 if( HAVE_GPU_AWARE_MPI )
   list(APPEND ECWAM_DEFINITIONS WITH_GPU_AWARE_MPI )
 endif()
@@ -450,8 +458,10 @@ ecwam_target_fortran_module_directory(
 if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_link_options( ${ecwam} INTERFACE SHELL:${OpenACC_Fortran_FLAGS} )
    target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:168,fastmath" )
-   # target_compile_options( ${ecwam} PRIVATE "-mp=gpu" )
-   # target_compile_options( ${ecwam} PRIVATE "-Minfo=all" )
+endif()
+
+if( HAVE_OMP_OFFLOAD )
+   target_link_options( ${ecwam} INTERFACE SHELL:${OpenMP_Fortran_FLAGS} )
 endif()
 
 if( HAVE_CUDA )
@@ -504,7 +514,6 @@ if( HAVE_LOKI )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki.config )
   else()
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
-     target_compile_definitions( ${ecwam} PRIVATE WAM_GPU )
   endif()
 
   # Apply Loki source file transformation to lib target
