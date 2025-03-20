@@ -95,23 +95,15 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-  print *, "ND3S: ", ND3S
-  print *, "ND3E: ", ND3E
-
-  ! $acc update device(WKPMN, KPM, LLWKPMN, KCR, KCOR, JXO, JYO, SUMWN, WLONN, WLATN, WCORN, KLAT, KLON)
-
-  ! ! $acc data copyin(WKPMN, KPM, LLWKPMN, KCR, KCOR, JXO, )
-  ! ! $acc data copyin(ND3E, ND3S, F1,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM) copy(F3)
-
-  ! $acc data copyin(ND3S, ND3E)
-
           ! ! $acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
-          !$omp target teams distribute parallel do simd collapse(2)
+          !$omp target teams distribute collapse(2) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
+          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+              !$omp parallel do simd
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
@@ -126,6 +118,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M,-1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+                !$omp parallel do simd
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
@@ -135,6 +128,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M, 1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
+                !$omp parallel do simd
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
@@ -142,9 +136,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ENDDO
-          !$omp end target teams distribute parallel do simd
+          !$omp end target teams distribute
           ! ! $acc end kernels 
-          ! $acc end data
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.

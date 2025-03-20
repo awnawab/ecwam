@@ -142,18 +142,16 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
-! ! $acc data copyin(SINTH, COSTH)
-!$omp target data map(to:SINTH, COSTH)
 
 ! ! $acc kernels !loop private(CGYP,KIJS,KIJL,CGX,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
-!$omp target
+!$omp target teams distribute parallel do collapse(3) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL, &
+!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
           DO M = MSTART, MEND
 
 !*          LOOP OVER DIRECTIONS.
 !           ---------------------
 ! ! $acc loop private(CGX,CGY)
 
-!$omp parallel do collapse(2) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
             DO K=1,NANG
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
@@ -368,11 +366,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO  ! END LOOP OVER DIRECTIONS
 
           ENDDO  ! END LOOP OVER FREQUENCIES
-!$omp end target
+!$omp end target teams distribute parallel do
 ! ! $acc end kernels
 
-! ! $acc end data
-!$omp end target data
 
       ELSE
 !*    CARTESIAN GRID.
@@ -418,13 +414,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ---------------------
 
 ! ! $acc parallel loop private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
-! ! $acc data copyin(SINTH, COSPH, SINPH)
-!$omp target data map(to:SINTH, COSPH, SINPH)
-! ! $acc kernels
-      ! need for privatising some arrays in order to use "teams distribute"
-      !$omp target
-      ! teams distribute private(KP1, KM1, SP, SM, K, KIJS,KIJL, MSTART, MEND, M, IJ)
-      ! teams distribute private(KP1, KM1, SP, SM)
+      !$omp target teams distribute private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
       DO K=1,NANG
         KP1 = K+1
         IF (KP1 > NANG) KP1 = 1
@@ -548,15 +538,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDIF
 
       ENDDO  ! END LOOP ON DIRECTIONS
-!$omp end target
-! target teams distribute
-! teams distribute
+!$omp end target teams distribute
 
 ! ! $acc end parallel
-! ! $acc end kernels
-
-! ! $acc end data
-!$omp end target data
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
