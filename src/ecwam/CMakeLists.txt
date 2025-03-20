@@ -516,6 +516,10 @@ if( HAVE_LOKI )
      set( LOKI_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ecwam_loki_gpu.config )
   endif()
 
+  if( HAVE_OMP_OFFLOAD )
+     string( APPEND LOKI_MODE "-omp" )
+  endif()
+
   # Apply Loki source file transformation to lib target
   loki_transform_target( TARGET ${ecwam}
     MODE ${LOKI_MODE}
