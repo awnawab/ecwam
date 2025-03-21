@@ -32,14 +32,14 @@ projects :
         version : 1.4.1
 
     - field_api :
-        git     : https://github.com/ecmwf-ifs/field_api.git
-        version : naan-openmp-offload
+        git     : https://github.com/awnawab/field_api.git
+        version : naan-openmp-offload-amd
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : v0.2.9
+        version : naan-nams-openmp-offload
         optional: true
         require : ecbuild
         cmake   : >
