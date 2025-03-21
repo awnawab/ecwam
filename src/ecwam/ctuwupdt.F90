@@ -91,29 +91,38 @@ IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
-  ! ! $acc kernels
+#ifdef OMPGPU
   !$omp target teams distribute parallel do simd
+#else
+  !$acc kernels
+#endif
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
+#ifdef OMPGPU
   !$omp end target teams distribute parallel do simd
-  ! ! $acc end kernels
+#else
+  !$acc end kernels
+#endif
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
   IF (.NOT. ALLOCATED(JYO)) ALLOCATE(JYO(NANG,2))
   IF (.NOT. ALLOCATED(KCR)) ALLOCATE(KCR(NANG,4))
 
-! !$acc update device(JXO, JYO, KCR, KPM)
+#ifdef OMPGPU
 !$omp target update to(JXO, JYO, KCR, KPM)
+#else
+!$acc update device(JXO, JYO, KCR, KPM)
+#endif
 
-! !$acc data copyin(COSTH, SINTH)
-!$omp target data map(to:COSTH, SINTH)
- 
- ! ! $acc kernels
- !$omp target teams distribute parallel do simd private(KM1, KP1)
+#ifdef OMPGPU
+ !$omp target teams distribute parallel do simd private(KM1, KP1) map(to:COSTH,SINTH)
+#else
+ !$acc kernels copyin(COSTH,SINTH)
+#endif
   DO K=1,NANG
 
     KM1 = K-1
@@ -165,10 +174,11 @@ IF (LFRSTCTU) THEN
       ENDIF
     ENDIF
   ENDDO
+#ifdef OMPGPU
   !$omp end target teams distribute parallel do simd
-  ! ! $acc end kernels
-!!$acc end data
-!$omp end target data
+#else
+  !$acc end kernels
+#endif
   LFRSTCTU = .FALSE.
 
 ENDIF
@@ -266,14 +276,17 @@ ENDIF
 
 ! FIND THE LOGICAL FLAGS THAT WILL LIMIT THE EXTEND OF THE CALCULATION IN PROPAGS2
 
-! ! $acc parallel loop independent collapse(4)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do simd collapse(4)
+#else
+!$acc parallel loop independent collapse(4)
+#endif
 DO IC=1,2
   DO ICL=1,2
     DO K=1,NANG
       DO M=1,NFRE_RED
         LLWLATN(K,M,IC,ICL)=.FALSE.
-        ! ! $acc loop
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WLATN(IJ,K,M,IC,ICL) > 0.0_JWRB) THEN
             LLWLATN(K,M,IC,ICL)=.TRUE.
@@ -284,16 +297,22 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do simd
-! ! $acc end parallel
+#else
+!$acc end parallel
+#endif
 
-! ! $acc parallel loop independent collapse(3)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do simd collapse(3)
+#else
+!$acc parallel loop independent collapse(3)
+#endif
 DO IC=1,2
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWLONN(K,M,IC)=.FALSE.
-      ! ! $acc loop
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WLONN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWLONN(K,M,IC)=.TRUE.
@@ -303,17 +322,23 @@ DO IC=1,2
     ENDDO
   ENDDO
 ENDDO
-! ! $acc end parallel
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do simd
+#else
+!$acc end parallel
+#endif
 
-! ! $acc parallel loop independent collapse(4)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do simd collapse(4)
+#else
+!$acc parallel loop independent collapse(4)
+#endif
 DO ICL=1,2
   DO ICR=1,4
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWCORN(K,M,ICR,ICL)=.FALSE.
-        ! ! $acc loop
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WCORN(IJ,K,M,ICR,ICL) > 0.0_JWRB) THEN
             LLWCORN(K,M,ICR,ICL)=.TRUE.
@@ -324,16 +349,22 @@ DO ICL=1,2
     ENDDO
   ENDDO
 ENDDO
-! ! $acc end parallel
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do simd
+#else
+!$acc end parallel
+#endif
 
-! ! $acc parallel loop independent collapse(3)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do simd collapse(3)
+#else
+!$acc parallel loop independent collapse(3)
+#endif
 DO IC=-1,1
   DO M=1,NFRE_RED
     DO K=1,NANG
       LLWKPMN(K,M,IC)=.FALSE.
-      ! ! $acc loop
+      !$acc loop
       DO IJ=IJS,IJL
         IF (WKPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
           LLWKPMN(K,M,IC)=.TRUE.
@@ -343,17 +374,23 @@ DO IC=-1,1
     ENDDO
   ENDDO
 ENDDO
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do simd
-! ! $acc end parallel
+#else
+!$acc end parallel
+#endif
 
 IF (IREFRA == 2 .OR. IREFRA == 3) THEN
-! ! $acc parallel loop independent collapse(3)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do simd collapse(3)
+#else
+!$acc parallel loop independent collapse(3)
+#endif
   DO IC=-1,1
     DO M=1,NFRE_RED
       DO K=1,NANG
         LLWMPMN(K,M,IC)=.FALSE.
-        ! ! $acc loop
+        !$acc loop
         DO IJ=IJS,IJL
           IF (WMPMN(IJ,K,M,IC) > 0.0_JWRB) THEN
             LLWMPMN(K,M,IC)=.TRUE.
@@ -363,8 +400,11 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
       ENDDO
     ENDDO
   ENDDO
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do simd 
-! ! $acc end parallel
+#else
+!$acc end parallel
+#endif
 ENDIF
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)

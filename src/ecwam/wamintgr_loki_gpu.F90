@@ -204,8 +204,11 @@ IF (CDATE >= CDTIMPNEXT) THEN
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
 #ifdef WAM_GPU
-! ! $acc kernels present(MIJ,VARS_4D)
+#ifdef OMPGPU
 !$omp target teams distribute parallel do map(to:MIJ,VARS_4D)
+#else
+!$acc kernels present(MIJ,VARS_4D)
+#endif
 #else
 !$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
 #endif
@@ -215,8 +218,11 @@ IF (CDATE >= CDTIMPNEXT) THEN
       VARS_4D%XLLWS(:,:,:,ICHNK) = 0.0_JWRB
     ENDDO
 #ifdef WAM_GPU
-! ! $acc end kernels
+#ifdef OMPGPU
 !$omp end target teams distribute parallel do
+#else
+!$acc end kernels
+#endif
 #else
 !$OMP      END PARALLEL DO
 #endif
