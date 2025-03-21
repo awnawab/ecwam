@@ -40,15 +40,15 @@ projects :
 
     - field_api :
         git     : https://github.com/ecmwf-ifs/field_api.git
-        version : v0.3.8
+        version : 0d8f14a134
         cmake   : >
             ENABLE_SINGLE_PRECISION=OFF
 
     - loki :
         git     : https://github.com/ecmwf-ifs/loki
-        version : 0.3.2
+        version : main
         optional: true
-        require : ecbuild
+        require : b711b95fec
         cmake   : >
             LOKI_ENABLE_TESTS=OFF
             LOKI_ENABLE_NO_INSTALL=ON
