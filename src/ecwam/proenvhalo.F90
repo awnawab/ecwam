@@ -118,7 +118,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
 
 #ifdef OMPGPU
-      !$omp target map(to:WVPRPT_LAND)
+      !$omp target map(to:WVPRPT_LAND,WVPRPT_LAND%WAVNUM,WVPRPT_LAND%CGROUP,WVPRPT_LAND%OMOSNH2KD)
 #else
       !$acc kernels present(WVPRPT_LAND)
 #endif
