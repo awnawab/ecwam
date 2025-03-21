@@ -302,7 +302,12 @@
 !        WE ONLY NEED THE FIRST NTRAIN TO BE SORTED
 !        -----------------------------------------------------------------
 
-      NPMAX_LOC=MAXVAL(NPEAK(:))
+      NPMAX_LOC = -1
+      !$loki vector-reduction( max:NPMAX_LOC )
+      DO IJ=KIJS,KIJL
+         NPMAX_LOC = MAX(NPMAX_LOC, NPEAK(IJ))
+      ENDDO
+      !$loki end vector-reduction( max:NPMAX_LOC )
 
       DO ISORT=1,NTRAIN
         DO IJ=KIJS,KIJL

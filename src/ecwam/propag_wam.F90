@@ -141,7 +141,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #endif
           DO M = 1, NFRE_RED
             DO K = 1, NANG
-              FL1_EXT(IJSB:IJLB, K, M) = FL1(KIJS:KIJL, K, M, ICHNK)
+              DO IJ = IJSB, IJLB
+                FL1_EXT(IJ, K, M) = FL1(IJ - IJSB + KIJS, K, M, ICHNK)
+              ENDDO
             ENDDO
           ENDDO
         ENDDO
