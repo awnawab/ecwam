@@ -181,7 +181,8 @@ SUBROUTINE INITMDL (NADV,                                 &
       USE YOWMAP   , ONLY : AMOWEP   ,AMOSOP   ,                        &
      &            AMOEAP   ,AMONOP   ,XDELLA   ,XDELLO   ,ZDELLO   ,    &
      &            NIBLO    ,NGX      ,NGY      ,                        &
-     &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS
+     &            KMNOP    ,KMSOP    ,IPER     ,IRGG     ,IQGAUSS,      &
+     &            CLDOMAIN, LCLDOMAIN
       USE YOWMPP   , ONLY : IRANK    ,NPROC    ,KTAG
       USE YOWPARAM , ONLY : NANG     ,NFRE     ,NFRE_RED ,NFRE_ODD ,    & 
      &                      LLUNSTR
@@ -358,6 +359,8 @@ IF (LHOOK) CALL DR_HOOK('INITMDL',0,ZHOOK_HANDLE)
 !         ------------------------
 
       CALL USERIN (IFORCA, LWCUR)
+
+      LCLDOMAIN = CLDOMAIN == 's'
 
 !     DEFINE COEFFICIENT FOR MEAN PERIODS CALCULATION
       IF (ALLOCATED(DFIMOFR)) DEALLOCATE(DFIMOFR)
