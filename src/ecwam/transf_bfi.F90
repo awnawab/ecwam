@@ -45,7 +45,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_BFI(XK0,D,XNU,SIG_TH)
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,C_S_SQ,V_G,V_G_SQ,D2OM
       REAL(KIND=JWRB) :: XNL_1,XNL_2,XNL_3,XNL_4
-      REAL(KIND=JWRB) :: XNL,ALP,ZFAC,T_NL
+      REAL(KIND=JWRB) :: XNL,ALP,ZFAC,T_NL,SINH_X
 !----------------------------------------------------------------------
 
       IF (LHOOK) CALL DR_HOOK('TRANSF_BFI',0,ZHOOK_HANDLE)
@@ -68,7 +68,8 @@ REAL(KIND=JWRB) FUNCTION TRANSF_BFI(XK0,D,XNU,SIG_TH)
           IF (X < EPS) THEN
             V_G = C_0
           ELSE
-            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH_X)
           ENDIF
           V_G_SQ = V_G**2
           D2OM = (T_0-X*(1._JWRB-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)

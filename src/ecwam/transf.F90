@@ -34,7 +34,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
 
       REAL(KIND=JWRB), INTENT(IN) :: XK,D
 !$loki routine seq
-      REAL(KIND=JWRB) :: EPS,X,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL
+      REAL(KIND=JWRB) :: EPS,X,T_0,OM,C_0,V_G,DV_G,XNL_1,XNL_2,XNL,SINH_X
 
       EPS=0.0001_JWRB
 !
@@ -53,7 +53,8 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
             V_G = 0.5_JWRB*C_0
             V_G = C_0
           ELSE
-            V_G = 0.5_JWRB*C_0*(1.0_JWRB+2.0_JWRB*X/SINH(2.0_JWRB*X))
+            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            V_G = 0.5_JWRB*C_0*(1.0_JWRB+2.0_JWRB*X/SINH_X)
           ENDIF
           DV_G = (T_0-X*(1.0_JWRB-T_0**2))**2+4.0_JWRB*X**2*T_0**2*(1.0_JWRB-T_0**2)
        

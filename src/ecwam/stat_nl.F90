@@ -78,7 +78,7 @@
       REAL(KIND=JWRB) :: C4_CONST,ZC1,ZC2,ZC3,ZR
       REAL(KIND=JWRB) :: DELTA_2D,C_0,C_S_SQ,V_G,V_G_SQ,ZFAC,ZFAC1,ZFAC2
       REAL(KIND=JWRB) :: XKAPPA1,ALPHA,XJ
-      REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON
+      REAL(KIND=JWRB) :: ZEPSILON, ZSQREPSILON, SINH_X
       REAL(KIND=JWRB), DIMENSION(KIJL) :: TRANSF
 
 !-----------------------------------------------------------------------
@@ -118,7 +118,8 @@
           ELSEIF (X < EPS) THEN
             V_G = C_0
           ELSE
-            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH_X)
           ENDIF
           V_G_SQ=V_G**2
 
