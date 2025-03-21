@@ -75,7 +75,7 @@ REAL(KIND=JWRB) FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
       REAL(KIND=JWRB), PARAMETER :: AKI_MAX = 20.0_JWRB
 
 !$loki routine seq
-      REAL(KIND=JWRB) :: FICSTF, RDH
+      REAL(KIND=JWRB) :: FICSTF, RDH, SINH_AKID
       REAL(KIND=JWRB) :: OM2, AKI, AKIOLD, F, FPRIME, AKID 
 
 
@@ -103,7 +103,8 @@ REAL(KIND=JWRB) FUNCTION AKI_ICE (G,XK,DEPTH,RHOW,CITH)
           AKIOLD=AKI 
           AKID=MIN(DEPTH*AKI,50.0_JWRB)
           F=FICSTF*AKI**5+G*AKI-OM2*(RDH*AKI+1./TANH(AKID))
-          FPRIME=5._JWRB*FICSTF*AKI**4+G-OM2*(RDH-DEPTH/(SINH(AKID)**2))
+          SINH_AKID = (EXP(AKID) - EXP(-AKID)) * 0.5_JWRB
+          FPRIME=5._JWRB*FICSTF*AKI**4+G-OM2*(RDH-DEPTH/(SINH_AKID**2))
           AKI = AKI-F/FPRIME
 !         in case of overshoot because it is trying to find a very large wave number
           IF (AKI <= 0.0_JWRB) AKI=AKI_MAX

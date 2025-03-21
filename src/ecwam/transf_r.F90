@@ -36,7 +36,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_R(XK0,D)
 
       REAL(KIND=JWRB), PARAMETER :: EPS=0.0001_JWRB
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-      REAL(KIND=JWRB) :: XK0,D
+      REAL(KIND=JWRB) :: XK0,D,SINH_X
       REAL(KIND=JWRB) :: X,XK,T_0,T_0_SQ,OM,C_0,V_G,D2OM
 
 !----------------------------------------------------------------------
@@ -60,7 +60,8 @@ REAL(KIND=JWRB) FUNCTION TRANSF_R(XK0,D)
           IF (X < EPS) THEN
             V_G = C_0
           ELSE
-            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH(2._JWRB*X))
+            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH_X)
           ENDIF
           D2OM = (T_0-X*(1._JWRB-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)
           TRANSF_R = 4._JWRB*(V_G/C_0)**3*T_0_SQ/D2OM
