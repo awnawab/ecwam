@@ -50,6 +50,16 @@ projects :
         dir     : $PWD
         require : fiat 
 
+populate_options:
+
+    - fckit-wheel-arch :
+        help : Arch to download Python wheels for
+        populate: FCKIT_WHEEL_ARCH={{value}}
+
+    - fckit-wheel-python-version :
+        help : Python version for which to download wheels
+        populate: FCKIT_WHEEL_PYTHON_VERSION={{value}}
+
 options :
 
     - with-single-precision :
