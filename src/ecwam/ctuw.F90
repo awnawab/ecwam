@@ -101,6 +101,10 @@ SUBROUTINE CTUW (DELPRO, MSTART, MEND,                    &
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL) :: CURMASK
       REAL(KIND=JWRB), DIMENSION(KIJS:KIJL,2) :: CGX, CGY
 
+      !.... Device pointers
+      INTEGER(KIND=JWIM), POINTER, CONTIGUOUS :: KXLT(:) => NULL()
+      INTEGER(KIND=JWIM), POINTER, CONTIGUOUS :: IXLG(:) => NULL()
+
 
 ! ----------------------------------------------------------------------
 
@@ -130,6 +134,12 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*    ADVECTION IN PHYSICAL SPACE
 !     =========================== 
 
+#ifdef WAM_GPU
+        CALL CTUW_OFFLOAD()
+#else
+        CALL CTUW_SET_POINTERS()
+#endif
+
 !*    SPHERICAL OR CARTESIAN GRID?
 !     ----------------------------
       IF (ICASE == 1) THEN
@@ -145,9 +155,9 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 #ifdef OMPGPU
 !$omp target teams distribute parallel do collapse(3) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL, &
-!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT) map(to:KXLT,IXLG)
 #else
-!$acc kernels
+!$acc kernels present(KXLT,IXLG)
 #endif
           DO M = MSTART, MEND
 
@@ -176,8 +186,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
                     ENDIF
                     CGY(IJ,1)=0.5_JWRB*(CGROUP_EXT(IJ,M)+DP(IJ,1)*CGYP)*COSTH(K)
 
-                    IX=BLK2GLO%IXLG(IJ)
-                    KY=BLK2GLO%KXLT(IJ)
+                    IX=IXLG(IJ)
+                    KY=KXLT(IJ)
 !                    IF (IREFRA == 2 .OR. IREFRA == 3 ) THEN
 !                      UU=U_EXT(IJ)*COSPHM1_EXT(IJ)
 !                      UREL=CGX(IJ,1)+UU
@@ -512,7 +522,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
 
-              JH=BLK2GLO%KXLT(IJ)
+              JH=KXLT(IJ)
               TANPH = SINPH(JH)/COSPH(JH)
               DRGP = TANPH*SP
               DRGM = TANPH*SM
@@ -692,8 +702,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 
 !           SUM < 1  ?
             IF (SUMWN(IJ,K,M) > 1.0_JWRB .OR. SUMWN(IJ,K,M) < 0.0_JWRB) THEN
-              IX=BLK2GLO%IXLG(IJ)
-              KY=BLK2GLO%KXLT(IJ)
+              IX=IXLG(IJ)
+              KY=KXLT(IJ)
               XLON=AMOWEP+(IX-1)*ZDELLO(KY)
               XLAT=AMOSOP+(KY-1)*XDELLA
               WRITE(IU06,*) '***********************************'
@@ -818,5 +828,15 @@ IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
           ISAMESIGN=0
         ENDIF
       END FUNCTION ISAMESIGN
+
+      SUBROUTINE CTUW_OFFLOAD()
+        CALL BLK2GLO%F_KXLT%GET_DEVICE_DATA_RDWR(KXLT)
+        CALL BLK2GLO%F_IXLG%GET_DEVICE_DATA_RDWR(IXLG)
+      END SUBROUTINE CTUW_OFFLOAD
+
+      SUBROUTINE CTUW_SET_POINTERS()
+        CALL BLK2GLO%F_KXLT%GET_HOST_DATA_RDWR(KXLT)
+        CALL BLK2GLO%F_IXLG%GET_HOST_DATA_RDWR(IXLG)
+      END SUBROUTINE CTUW_SET_POINTERS
 
 END SUBROUTINE CTUW

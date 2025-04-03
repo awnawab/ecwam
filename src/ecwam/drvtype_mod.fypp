@@ -53,10 +53,6 @@ MODULE ${obj.upper()}$_TYPE_MOD
       PROCEDURE :: SYNC_DEVICE_RDONLY => ${obj.upper()}$_SYNC_DEVICE_RDONLY
       PROCEDURE :: SYNC_HOST_RDWR => ${obj.upper()}$_SYNC_HOST_RDWR
       PROCEDURE :: SYNC_HOST_RDONLY => ${obj.upper()}$_SYNC_HOST_RDONLY
-      PROCEDURE :: GET_DEVICE_DATA_RDWR => ${obj.upper()}$_GET_DEVICE_DATA_RDWR
-      PROCEDURE :: GET_DEVICE_DATA_RDONLY => ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
-      PROCEDURE :: GET_HOST_DATA_RDWR => ${obj.upper()}$_GET_HOST_DATA_RDWR
-      PROCEDURE :: GET_HOST_DATA_RDONLY => ${obj.upper()}$_GET_HOST_DATA_RDONLY
       PROCEDURE :: DELETE_DEVICE_DATA => ${obj.upper()}$_DELETE_DEVICE_DATA
 #:endif
    END TYPE ${obj.upper()}$
@@ -84,19 +80,6 @@ MODULE ${obj.upper()}$_TYPE_MOD
 
       SELF%LALLOC = .TRUE.
 
-      CALL SELF_OFFLOAD(SELF)
-
-      CONTAINS
-
-      SUBROUTINE SELF_OFFLOAD(OBJ)
-      TYPE(${obj.upper()}$), INTENT(INOUT) :: OBJ
-#ifdef OMPGPU
-      !$omp target enter data map(to:OBJ)
-#else
-      !$acc enter data copyin(OBJ)
-#endif
-      END SUBROUTINE SELF_OFFLOAD
-
    END SUBROUTINE ${obj.upper()}$_ALLOC
 
    SUBROUTINE ${obj.upper()}$_DEALLOC(SELF)
@@ -106,155 +89,16 @@ MODULE ${obj.upper()}$_TYPE_MOD
           #:for var in vars
       NULLIFY(SELF%${var.upper()}$)
 
-      ASSOCIATE(VAR => SELF%${var.upper()}$)
-#ifdef OMPGPU
-      !$omp target exit data map(release:VAR)
-#else
-      !$acc exit data detach(VAR)
-#endif
-      END ASSOCIATE
-
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
       NULLIFY(SELF%F_${var.upper()}$)
           #:endfor
       #:endfor
 
       SELF%LALLOC = .FALSE.
-      CALL SELF_WIPE(SELF)
-
-      CONTAINS
-
-      SUBROUTINE SELF_WIPE(OBJ)
-      TYPE(${obj.upper()}$), INTENT(INOUT) :: OBJ
-
-#ifdef OMPGPU
-      !$omp target exit data map(delete:OBJ)
-#else
-      !$acc exit data delete(OBJ)
-#endif
-      END SUBROUTINE SELF_WIPE
 
    END SUBROUTINE ${obj.upper()}$_DEALLOC
 
 #:if defined('WAM_GPU')
-   SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
-            $:flag
-            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
-            $:flag
-          #:endfor
-      #:endfor
-
-     #:for _, vars in zip(_def['types'], _def['vars'])
-         #:for var in vars
-     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
-         #:endfor
-     #:endfor
-
-
-      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
-         !... copy only selected members
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         IF(${f'L_{var.upper()}'}$)THEN
-             CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
-
-             CALL ATTACH_${var.upper()}$()
-
-         ENDIF
-             #:endfor
-         #:endfor
-      ELSE
-         !... copy entire struct
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDWR(SELF%${var.upper()}$)
-
-         CALL ATTACH_${var.upper()}$()
-             #:endfor
-         #:endfor
-      ENDIF
-
-      CONTAINS
-
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-      SUBROUTINE ATTACH_${var.upper()}$()
-
-        ASSOCIATE( VAR => SELF%${var.upper()}$ )
-#ifdef OMPGPU
-             !$omp target enter data map(to:VAR)
-#else
-             !$acc enter data attach(VAR)
-#endif
-        END ASSOCIATE
-
-      END SUBROUTINE ATTACH_${var.upper()}$
-          #:endfor
-      #:endfor
-
-   END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDWR
-
-   SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
-            $:flag
-            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
-            $:flag
-          #:endfor
-      #:endfor
-
-     #:for _, vars in zip(_def['types'], _def['vars'])
-         #:for var in vars
-     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
-         #:endfor
-     #:endfor
-
-
-      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
-         !... copy only selected members
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         IF(${f'L_{var.upper()}'}$)THEN
-             CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
-             CALL ATTACH_${var.upper()}$()
-         ENDIF
-             #:endfor
-         #:endfor
-      ELSE
-         !... copy entire struct
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         CALL SELF%F_${var.upper()}$%GET_DEVICE_DATA_RDONLY(SELF%${var.upper()}$)
-         CALL ATTACH_${var.upper()}$()
-             #:endfor
-         #:endfor
-      ENDIF
-      CONTAINS
-
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-      SUBROUTINE ATTACH_${var.upper()}$()
-
-        ASSOCIATE( VAR => SELF%${var.upper()}$ )
-#ifdef OMPGPU
-             !$omp target enter data map(to:VAR)
-#else
-             !$acc enter data attach(VAR)
-#endif
-        END ASSOCIATE
-
-      END SUBROUTINE ATTACH_${var.upper()}$
-          #:endfor
-      #:endfor
-
-   END SUBROUTINE ${obj.upper()}$_GET_DEVICE_DATA_RDONLY
-
    SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
       CLASS(${obj.upper()}$) :: SELF
       #:for _, vars in zip(_def['types'], _def['vars'])
@@ -332,119 +176,6 @@ MODULE ${obj.upper()}$_TYPE_MOD
       ENDIF
 
    END SUBROUTINE ${obj.upper()}$_SYNC_DEVICE_RDONLY
-
-   SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
-            $:flag
-            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
-            $:flag
-          #:endfor
-      #:endfor
-
-     #:for _, vars in zip(_def['types'], _def['vars'])
-         #:for var in vars
-     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
-         #:endfor
-     #:endfor
-
-
-      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
-         !... copy only selected members
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         IF(${f'L_{var.upper()}'}$)THEN
-             CALL RELEASE_${var.upper()}$()
-             CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
-         ENDIF
-             #:endfor
-         #:endfor
-      ELSE
-         !... copy entire struct
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         CALL RELEASE_${var.upper()}$()
-         CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
-             #:endfor
-         #:endfor
-      ENDIF
-
-      CONTAINS
-
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-      SUBROUTINE RELEASE_${var.upper()}$()
-
-        ASSOCIATE( VAR => SELF%${var.upper()}$)
-#ifdef OMPGPU
-         !$omp target exit data map(release:VAR)
-#else
-         !$acc exit data detach(VAR)
-#endif
-        END ASSOCIATE
-      END SUBROUTINE RELEASE_${var.upper()}$
-          #:endfor
-      #:endfor
-
-   END SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDONLY
-
-   SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDWR(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)
-      CLASS(${obj.upper()}$) :: SELF
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-            #:set flag = '      LOGICAL, INTENT(IN), OPTIONAL :: ' + var.upper()
-            $:flag
-            #:set flag = '      LOGICAL :: ' + f'L_{var.upper()} = .FALSE.'
-            $:flag
-          #:endfor
-      #:endfor
-
-     #:for _, vars in zip(_def['types'], _def['vars'])
-         #:for var in vars
-     IF(PRESENT(${var.upper()}$)) L_${var.upper()}$ = ${var.upper()}$
-         #:endfor
-     #:endfor
-
-      IF(${'.OR.'.join(f'L_{var.upper()}' for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$)THEN
-         !... copy only selected members
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         IF(${f'L_{var.upper()}'}$)THEN
-             CALL RELEASE_${var.upper()}$()
-             CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
-         ENDIF
-             #:endfor
-         #:endfor
-      ELSE
-         !... copy entire struct
-         #:for _, vars in zip(_def['types'], _def['vars'])
-             #:for var in vars
-         CALL RELEASE_${var.upper()}$()
-         CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
-             #:endfor
-         #:endfor
-      ENDIF
-
-      CONTAINS
-
-      #:for _, vars in zip(_def['types'], _def['vars'])
-          #:for var in vars
-      SUBROUTINE RELEASE_${var.upper()}$()
-
-        ASSOCIATE( VAR => SELF%${var.upper()}$)
-#ifdef OMPGPU
-         !$omp target exit data map(release:VAR)
-#else
-         !$acc exit data detach(VAR)
-#endif
-        END ASSOCIATE
-      END SUBROUTINE RELEASE_${var.upper()}$
-          #:endfor
-      #:endfor
-
-   END SUBROUTINE ${obj.upper()}$_GET_HOST_DATA_RDWR
 
    SUBROUTINE ${obj.upper()}$_SYNC_HOST_RDONLY(SELF, ${', '.join(var.upper() for _, vars in zip(_def['types'], _def['vars']) for var in vars)}$, QUEUE)
       CLASS(${obj.upper()}$) :: SELF

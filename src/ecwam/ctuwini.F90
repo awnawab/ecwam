@@ -45,6 +45,8 @@ REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(OUT) :: WLATM1 ! 1 - WLAT
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP,4), INTENT(OUT) :: WCORM1 ! 1 - WCOR
 REAL(KIND=JWRB), DIMENSION(NINF:NSUP,2), INTENT(OUT) :: DP     ! COS PHI FACTOR
 
+!.... Device pointers
+INTEGER(KIND=JWIM), POINTER, CONTIGUOUS :: KXLT(:) => NULL()
 
 INTEGER(KIND=JWIM) :: IJ, K, M, IC, ICR, ICL, KY, KK, KKM
 INTEGER(KIND=JWIM) :: NLAND
@@ -193,14 +195,21 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 !
 !*        COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
 !         (for all grid points)
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(2) private(KY,KK,KKM)
+
+#ifdef WAM_GPU
+        CALL CTUWINI_OFFLOAD()
 #else
-      !$acc parallel loop independent collapse(2) private(KY,KK,KKM)
+        CALL CTUWINI_SET_POINTERS()
+#endif
+
+#ifdef OMPGPU
+      !$omp target teams distribute parallel do simd collapse(2) private(KY,KK,KKM) map(to:KXLT)
+#else
+      !$acc parallel loop independent collapse(2) private(KY,KK,KKM) present(KXLT)
 #endif
           DO IC=1,2
             DO IJ = KIJS,KIJL
-              KY=BLK2GLO%KXLT(IJ)
+              KY=KXLT(IJ)
               KK=KY+2*IC-3
               KKM=MAX(1,MIN(KK,NGY))
               DP(IJ,IC) = COSPH(KKM)*COSPHM1_EXT(IJ)
@@ -215,5 +224,15 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 
 
 IF (LHOOK) CALL DR_HOOK('CTUWINI',1,ZHOOK_HANDLE)
+       CONTAINS
+
+       SUBROUTINE CTUWINI_OFFLOAD()
+        CALL BLK2GLO%F_KXLT%GET_DEVICE_DATA_RDWR(KXLT)
+       END SUBROUTINE CTUWINI_OFFLOAD
+
+       SUBROUTINE CTUWINI_SET_POINTERS()
+        CALL BLK2GLO%F_KXLT%GET_HOST_DATA_RDWR(KXLT)
+       END SUBROUTINE CTUWINI_SET_POINTERS
+
 
 END SUBROUTINE CTUWINI

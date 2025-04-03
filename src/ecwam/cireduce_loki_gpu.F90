@@ -67,6 +67,11 @@ SUBROUTINE CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
       INTEGER(KIND=JWIM) :: IJ, M 
       INTEGER(KIND=JWIM) :: ICHNK
 
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS :: CIWA(:,:,:) => NULL()
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS :: CGROUP(:,:,:) => NULL()
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS :: CICOVER(:,:) => NULL()
+      REAL(KIND=JWRB), POINTER, CONTIGUOUS :: CITHICK(:,:) => NULL()
+
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
       LOGICAL, SAVE :: LLFRST
@@ -77,6 +82,8 @@ SUBROUTINE CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
 
 IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
 
+      CALL CIREDUCE_OFFLOAD()
+
         IF( .NOT. LICERUN .OR. LMASKICE ) THEN
 
           IF (LLFRST) THEN
@@ -85,14 +92,14 @@ IF (LHOOK) CALL DR_HOOK('CIREDUCE',0,ZHOOK_HANDLE)
 !           ALL SEA ICE COVER POINTS WILL BE MASKED
             CALL GSTATS(1493,0)
 #ifdef OMPGPU
-!$omp target teams distribute parallel do collapse(3) map(to:WVPRPT)
+!$omp target teams distribute parallel do collapse(3) map(to:CIWA)
 #else
-!$acc kernels present(WVPRPT)
+!$acc kernels present(CIWA)
 #endif
             DO ICHNK = 1, NCHNK
                DO M = 1, NFRE
                  DO IJ = 1, NPROMA_WAM
-                   WVPRPT%CIWA(IJ,M,ICHNK) = 1.0_JWRB
+                   CIWA(IJ,M,ICHNK) = 1.0_JWRB
                  ENDDO
                ENDDO
             ENDDO
@@ -111,11 +118,11 @@ IF(LUPDATE_GPU_GLOBALS)THEN
 ENDIF
           CALL GSTATS(1493,0)
 !         DETERMINE THE WAVE ATTENUATION FACTOR
-!$loki structured-data present(FF_NOW, WVPRPT)
+!$loki structured-data present(CGROUP, CICOVER, CITHICK, CIWA)
 
           DO ICHNK = 1, NCHNK
-            CALL CIWAF(1, NPROMA_WAM, WVPRPT%CGROUP(:,:,ICHNK), FF_NOW%CICOVER(:,ICHNK), &
-&                      FF_NOW%CITHICK(:,ICHNK), WVPRPT%CIWA(:,:,ICHNK))
+            CALL CIWAF(1, NPROMA_WAM, CGROUP(:,:,ICHNK), CICOVER(:,ICHNK), &
+&                      CITHICK(:,ICHNK), CIWA(:,:,ICHNK))
           ENDDO
 
 !$loki end structured-data
@@ -123,5 +130,15 @@ ENDIF
         ENDIF
 
 IF (LHOOK) CALL DR_HOOK('CIREDUCE',1,ZHOOK_HANDLE)
+
+    CONTAINS
+
+    SUBROUTINE CIREDUCE_OFFLOAD()
+      CALL WVPRPT%F_CIWA%GET_DEVICE_DATA_RDWR(CIWA)
+      CALL WVPRPT%F_CGROUP%GET_DEVICE_DATA_RDWR(CGROUP)
+
+      CALL FF_NOW%F_CICOVER%GET_DEVICE_DATA_RDWR(CICOVER)
+      CALL FF_NOW%F_CITHICK%GET_DEVICE_DATA_RDWR(CITHICK)
+    END SUBROUTINE CIREDUCE_OFFLOAD
 
 END SUBROUTINE CIREDUCE_LOKI_GPU
