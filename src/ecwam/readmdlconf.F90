@@ -143,9 +143,9 @@ SUBROUTINE READMDLCONF (IU07)
       IJL = NIBLO
 
 #ifdef OMPGPU
-!$omp target update to(COSPH)
+!$omp target update to(SINPH,COSPH)
 #else
-!$acc update device(COSPH)
+!$acc update device(SINPH,COSPH)
 #endif
 
       IF (LHOOK) CALL DR_HOOK('READMDLCONF',1,ZHOOK_HANDLE)
