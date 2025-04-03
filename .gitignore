@@ -6,7 +6,8 @@ doc/latex
 *.sublime-workspace
 *.swp
 .nfs*
-build/*
+build*/*
+wamrun*/*
 install/*
 source/*
 ecbundle
