@@ -49,6 +49,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
   set(autopromote_flags   "-fdefault-real-8")
   set(fpe_flags           "-Xclang -ffp-exception-behavior=strict")
 
+  set(optimization_flags  "-O2")
 endif()
 
 ecbuild_add_fortran_flags( "-g -O0"   NAME base_debug BUILD DEBUG)

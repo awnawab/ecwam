@@ -460,10 +460,6 @@ if( HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
    target_compile_options( ${ecwam} PRIVATE "-gpu=maxregcount:168,fastmath" )
 endif()
 
-if( HAVE_OMP_OFFLOAD )
-   target_link_options( ${ecwam} INTERFACE SHELL:${OpenMP_Fortran_FLAGS} )
-endif()
-
 if( HAVE_CUDA )
   target_link_options( ${ecwam} PUBLIC "-cuda;-gpu=pinned" )
 endif()

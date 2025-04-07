@@ -60,35 +60,38 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
-#ifdef OMPGPU
-!$omp target data map(to:WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
-!$omp & map(to:BUFFER_EXT)
-#else
-!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
-!$acc present(BUFFER_EXT)
-#endif
+!#ifdef OMPGPU
+!!$omp target data map(to:WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
+!!$omp & map(to:BUFFER_EXT)
+!#else
+!!$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
+!!$acc present(BUFFER_EXT)
+!#endif
 
+!#ifdef OMPGPU
+!!$omp target update from(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR)
+!#endif
 !!! mapping chuncks to block ONLY for actual grid points !!!!
-#ifdef WAM_GPU
-#ifdef OMPGPU
-!$omp target teams distribute private(ICHNK, KIJS, IJSB, KIJL, IJLB)
-#else
-!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
-#endif
-#else
+!#ifdef WAM_GPU
+!#ifdef OMPGPU
+!!$omp target teams distribute private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+!#else
+!!$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+!#endif
+!#else
 !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, IJSB, KIJL, IJLB, M, IJ)
-#endif
+!#endif
       DO ICHNK = 1, NCHNK
         KIJS = 1
         IJSB = IJFROMCHNK(KIJS, ICHNK)
         KIJL = KIJL4CHNK(ICHNK)
         IJLB = IJFROMCHNK(KIJL, ICHNK)
 
-#ifdef OMPGPU        
-!$omp parallel do
-#else
-!$acc loop
-#endif
+!#ifdef OMPGPU        
+!!$omp parallel do
+!#else
+!!$acc loop
+!#endif
         DO M = 1, NFRE_RED
           DO IJ = IJSB, IJLB
             BUFFER_EXT(IJ, M) = WAVNUM(IJ - IJSB + KIJS, M,ICHNK)
@@ -105,30 +108,30 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
           BUFFER_EXT(IJ, 3*NFRE_RED+5) = VCUR(IJ - IJSB + KIJS,ICHNK)
         ENDDO
       ENDDO
-#ifdef WAM_GPU
-#ifdef OMPGPU
-!$omp end target teams distribute
-#else
-!$acc end kernels
-#endif
-#else
+!#ifdef WAM_GPU
+!#ifdef OMPGPU
+!!$omp end target teams distribute
+!#else
+!!$acc end kernels
+!#endif
+!#else
 !$OMP END PARALLEL DO
-#endif
+!#endif
 
-#ifdef WAM_GPU
-      CALL PROENVHALO_OFFLOAD()
-#else
+!#ifdef WAM_GPU
+!      CALL PROENVHALO_OFFLOAD()
+!#else
       CALL PROENVHALO_SET_POINTERS()
-#endif
-      IF (LHOOK) CALL DR_HOOK('MPI_TIME',0,ZHOOK_HANDLE_MPI)
-      CALL MPEXCHNG(BUFFER_EXT, 3*NFRE_RED+5, 1, 1)
-      IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
+!#endif
+!      IF (LHOOK) CALL DR_HOOK('MPI_TIME',0,ZHOOK_HANDLE_MPI)
+!      CALL MPEXCHNG(BUFFER_EXT, 3*NFRE_RED+5, 1, 1)
+!      IF (LHOOK) CALL DR_HOOK('MPI_TIME',1,ZHOOK_HANDLE_MPI)
 
-#ifdef OMPGPU
-      !$omp target map(to:WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
-#else
-      !$acc kernels present(WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
-#endif
+!#ifdef OMPGPU
+!      !$omp target map(to:WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
+!#else
+!      !$acc kernels present(WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
+!#endif
       DO M = 1, NFRE_RED
         BUFFER_EXT(NSUP+1,M) = WAVNUM_LAND(M)
         BUFFER_EXT(NSUP+1,NFRE_RED+M) = CGROUP_LAND(M)
@@ -140,17 +143,21 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       BUFFER_EXT(NSUP+1,3*NFRE_RED+3) = BATHYMAX
       BUFFER_EXT(NSUP+1,3*NFRE_RED+4) = 0.0_JWRB 
       BUFFER_EXT(NSUP+1,3*NFRE_RED+5) = 0.0_JWRB 
-#ifdef OMPGPU
-      !$omp end target
-#else
-      !$acc end kernels
-#endif
+!#ifdef OMPGPU
+!      !$omp end target
+!#else
+!      !$acc end kernels
+!#endif
+!      CALL PROENVHALO_OFFLOAD()
+!#ifdef OMPGPU
+!!$omp target update to(BUFFER_EXT)
+!#endif
 
-#ifdef OMPGPU
-!$omp end target data
-#else
-!$acc end data
-#endif
+!#ifdef OMPGPU
+!!$omp end target data
+!#else
+!!$acc end data
+!#endif
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',1,ZHOOK_HANDLE)
 

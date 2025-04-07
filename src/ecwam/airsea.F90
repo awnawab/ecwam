@@ -98,7 +98,7 @@
      &                US, Z0, Z0B, CHRNCK)
 
       ELSEIF (ICODE_WND == 1 .OR. ICODE_WND == 2) THEN
-
+!$loki remove
 !*    3. DETERMINE ROUGHNESS LENGTH (if needed).
 !        ---------------------------
 
@@ -116,6 +116,7 @@
           U10 (IJ) = MAX (U10 (IJ), WSPMIN)
         ENDDO
 
+!$loki end remove
       ELSE
         WRITE (IU06, * ) ' ++++++++++++++++++++++++++++++++++++++++++'
         WRITE (IU06, * ) ' + AIRSEA : INVALID VALUE OF ICODE_WND    +'

@@ -131,13 +131,13 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
 
       WGHT = 1.0_JWRB/MAX(WSPMIN_RESET_TAUW,EPSMIN)
 
-#ifdef WAM_GPU
-      CALL NEWWIND_OFFLOAD()
-#else
-      CALL NEWWIND_SET_POINTERS()
-#endif
-
       IF (CDATE >= CDATEWH) THEN
+
+!#ifdef WAM_GPU
+!      CALL NEWWIND_OFFLOAD()
+!#else
+      CALL NEWWIND_SET_POINTERS()
+!#endif
 
 !*    2. NEW WIND INPUT.
 !        ---------------
@@ -151,30 +151,30 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
         CDATEWL = CDTNEXT
 
         CALL GSTATS(1492,0)
-#ifdef WAM_GPU
-#ifdef OMPGPU
-!$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS,KIJL) &
-!$omp & map(to:WSWAVE_NOW,WSWAVE_NEXT,TAUW_NOW,UFRIC_NOW,UFRIC_NEXT,TAUW_NOW,CHRNCK_NOW,WDWAVE_NOW,WDWAVE_NEXT, &
-!$omp & AIRD_NOW,AIRD_NEXT,WSTAR_NOW,WSTAR_NEXT,CICOVER_NOW,CICOVER_NEXT,CITHICK_NOW,CITHICK_NEXT, &
-!$omp & USTRA_NOW,USTRA_NEXT,VSTRA_NOW,VSTRA_NEXT)
-#else
-!$acc parallel loop gang private(KIJS,KIJL) vector_length(NPROMA_WAM) &
-!$acc & present(WSWAVE_NOW,WSWAVE_NEXT,TAUW_NOW,UFRIC_NOW,UFRIC_NEXT,TAUW_NOW,CHRNCK_NOW,WDWAVE_NOW,WDWAVE_NEXT, &
-!$acc & AIRD_NOW,AIRD_NEXT,WSTAR_NOW,WSTAR_NEXT,CICOVER_NOW,CICOVER_NEXT,CITHICK_NOW,CITHICK_NEXT, &
-!$acc & USTRA_NOW,USTRA_NEXT,VSTRA_NOW,VSTRA_NEXT)
-#endif
-#else
+!#ifdef WAM_GPU
+!#ifdef OMPGPU
+!!$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS,KIJL) &
+!!$omp & map(to:WSWAVE_NOW,WSWAVE_NEXT,TAUW_NOW,UFRIC_NOW,UFRIC_NEXT,TAUW_NOW,CHRNCK_NOW,WDWAVE_NOW,WDWAVE_NEXT, &
+!!$omp & AIRD_NOW,AIRD_NEXT,WSTAR_NOW,WSTAR_NEXT,CICOVER_NOW,CICOVER_NEXT,CITHICK_NOW,CITHICK_NEXT, &
+!!$omp & USTRA_NOW,USTRA_NEXT,VSTRA_NOW,VSTRA_NEXT)
+!#else
+!!$acc parallel loop gang private(KIJS,KIJL) vector_length(NPROMA_WAM) &
+!!$acc & present(WSWAVE_NOW,WSWAVE_NEXT,TAUW_NOW,UFRIC_NOW,UFRIC_NEXT,TAUW_NOW,CHRNCK_NOW,WDWAVE_NOW,WDWAVE_NEXT, &
+!!$acc & AIRD_NOW,AIRD_NEXT,WSTAR_NOW,WSTAR_NEXT,CICOVER_NOW,CICOVER_NEXT,CITHICK_NOW,CITHICK_NEXT, &
+!!$acc & USTRA_NOW,USTRA_NEXT,VSTRA_NOW,VSTRA_NEXT)
+!#endif
+!#else
 !$OMP   PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK, KIJS, KIJL, IJ, TLWMAX)
-#endif
+!#endif
         DO ICHNK = 1, NCHNK
           KIJS = 1
           KIJL = NPROMA_WAM
           IF (ICODE_WND == 3 ) THEN
-#ifdef OMPGPU
-            !$omp parallel do
-#else
-            !$acc loop vector
-#endif
+!#ifdef OMPGPU
+!            !$omp parallel do
+!#else
+!            !$acc loop vector
+!#endif
             DO IJ = KIJS, KIJL
               WSWAVE_NOW(IJ,ICHNK) = WSWAVE_NEXT(IJ,ICHNK)
 ! adapt first estimate of wave induced stress for low winds
@@ -186,11 +186,11 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ELSE
-#ifdef OMPGPU
-            !$omp parallel do
-#else
-            !$acc loop vector
-#endif
+!#ifdef OMPGPU
+!            !$omp parallel do
+!#else
+!            !$acc loop vector
+!#endif
             DO IJ = KIJS, KIJL
               UFRIC_NOW(IJ,ICHNK) = UFRIC_NEXT(IJ,ICHNK)
 ! update the estimate of TAUW
@@ -200,11 +200,11 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
             ENDDO
           ENDIF
 
-#ifdef OMPGPU
-          !$omp parallel do
-#else
-          !$acc loop vector
-#endif
+!#ifdef OMPGPU
+!          !$omp parallel do
+!#else
+!          !$acc loop vector
+!#endif
           DO IJ = KIJS, KIJL
             WDWAVE_NOW(IJ,ICHNK)  = WDWAVE_NEXT(IJ,ICHNK)
             AIRD_NOW(IJ,ICHNK)    = AIRD_NEXT(IJ,ICHNK)
@@ -216,26 +216,27 @@ IF (LHOOK) CALL DR_HOOK('NEWWIND',0,ZHOOK_HANDLE)
           ENDDO
 
         ENDDO
-#ifdef WAM_GPU
-#ifdef OMPGPU
-!$omp end target teams distribute
-#else
-!$acc end parallel loop
-#endif
-#else
+!#ifdef WAM_GPU
+!#ifdef OMPGPU
+!!$omp end target teams distribute
+!#else
+!!$acc end parallel loop
+!#endif
+!#else
 !$OMP   END PARALLEL DO
-#endif
+!#endif
         CALL GSTATS(1492,1)
 
+!        CALL NEWWIND_SET_POINTERS()
 
         CALL INCDATE(CDATEWH, IDELWO)
 
 !       UPDATE THE SEA ICE REDUCTION FACTOR
-#ifdef WAM_GPU
-        CALL CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
-#else
+!#ifdef WAM_GPU
+!        CALL CIREDUCE_LOKI_GPU (WVPRPT, FF_NOW)
+!#else
         CALL CIREDUCE (WVPRPT, FF_NOW)
-#endif
+!#endif
 
       ENDIF
 

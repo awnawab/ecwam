@@ -134,11 +134,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*    ADVECTION IN PHYSICAL SPACE
 !     =========================== 
 
-#ifdef WAM_GPU
-        CALL CTUW_OFFLOAD()
-#else
+!#ifdef WAM_GPU
+!        CALL CTUW_OFFLOAD()
+!#else
         CALL CTUW_SET_POINTERS()
-#endif
+!#endif
 
 !*    SPHERICAL OR CARTESIAN GRID?
 !     ----------------------------
@@ -153,23 +153,23 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*        LOOP OVER FREQUENCIES.
 !         ----------------------
 
-#ifdef OMPGPU
-!$omp target teams distribute parallel do collapse(3) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL, &
-!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT) map(to:KXLT,IXLG)
-#else
-!$acc kernels present(KXLT,IXLG)
-#endif
+!#ifdef OMPGPU
+!!$omp target teams distribute parallel do collapse(3) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL, &
+!!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT) map(to:KXLT,IXLG)
+!#else
+!!$acc kernels present(KXLT,IXLG)
+!#endif
           DO M = MSTART, MEND
 
 !*          LOOP OVER DIRECTIONS.
 !           ---------------------
-!$acc loop private(CGX,CGY)
+!!$acc loop private(CGX,CGY)
 
             DO K=1,NANG
 
 !             FIND MEAN GROUP VELOCITY COMPONENTS FOR DIRECTION TH(K)+180
 !             -----------------------------------------------------------
-!$acc loop private(CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
+!!$acc loop private(CGYP,IX,KY,UU,UREL,ISSU,VV,VREL,ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT)
                   DO IJ=KIJS,KIJL
 !                   IC = 1 
 
@@ -379,11 +379,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO  ! END LOOP OVER DIRECTIONS
 
           ENDDO  ! END LOOP OVER FREQUENCIES
-#ifdef OMPGPU
-!$omp end target teams distribute parallel do
-#else
-!$acc end kernels
-#endif
+!#ifdef OMPGPU
+!!$omp end target teams distribute parallel do
+!#else
+!!$acc end kernels
+!#endif
 
 
       ELSE
@@ -429,12 +429,12 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*    LOOP OVER DIRECTIONS.
 !     ---------------------
 
-#ifdef OMPGPU
-      !$omp target teams distribute private(km1,kp1,sp,sm) &
-      !$omp & map(to:COSPH,SINPH)
-#else
-      !$acc parallel loop private(km1,kp1,sp,sm)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute private(km1,kp1,sp,sm) &
+!      !$omp & map(to:COSPH,SINPH)
+!#else
+!      !$acc parallel loop private(km1,kp1,sp,sm)
+!#endif
       DO K=1,NANG
         KP1 = K+1
         IF (KP1 > NANG) KP1 = 1
@@ -514,11 +514,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !*      NO DEPTH REFRACTION.
 !       -------------------
 !        IF (IREFRA == 0) THEN
-#ifdef OMPGPU
-!$omp parallel do collapse(2) private(DTHP,DTHM,JH,TANPH,DRGP,DRGM)
-#else
-!$acc loop collapse(2) private(DTHP,DTHM,JH,TANPH,DRGP,DRGM)
-#endif
+!#ifdef OMPGPU
+!!$omp parallel do collapse(2) private(DTHP,DTHM,JH,TANPH,DRGP,DRGM)
+!#else
+!!$acc loop collapse(2) private(DTHP,DTHM,JH,TANPH,DRGP,DRGM)
+!#endif
           DO M = MSTART, MEND
             DO IJ=KIJS,KIJL
 
@@ -589,11 +589,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !        ENDIF
 
       ENDDO  ! END LOOP ON DIRECTIONS
-#ifdef OMPGPU
-!$omp end target teams distribute
-#else
-!$acc end parallel
-#endif
+!#ifdef OMPGPU
+!!$omp end target teams distribute
+!#else
+!!$acc end parallel
+!#endif
 
 !     CHECK THAT WEIGHTS ARE LESS THAN 1
 !     AND COMPUTE THEIR SUM AND CHECK IT IS LESS THAN 1 AS WELL
@@ -767,17 +767,17 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !!!!!!INCLUDE THE BLOCKING COEFFICIENTS INTO THE WEIGHTS OF THE
 !     SURROUNDING POINTS.
 
-#ifdef OMPGPU
-!$omp target teams distribute parallel do simd collapse(3)
-#else
-!$acc parallel loop collapse(3)
-#endif
+!#ifdef OMPGPU
+!!$omp target teams distribute parallel do simd collapse(3)
+!#else
+!!$acc parallel loop collapse(3)
+!#endif
       DO K=1,NANG
         DO M = MSTART, MEND
           DO IJ=KIJS,KIJL
 
 !           POINTS ON SURROUNDING LATITUDES 
-!$acc loop collapse(2)
+!!$acc loop collapse(2)
             DO IC=1,2
               DO ICL=1,2
                 WLATN(IJ,K,M,IC,ICL) = WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC) 
@@ -785,13 +785,13 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO
 
 !           POINTS ON SURROUNDING LONGITUDE
-!$acc loop
+!!$acc loop
             DO IC=1,2
               WLONN(IJ,K,M,IC) = WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
             ENDDO
 
 !           SURROUNDING CORNER POINTS
-!$acc loop collapse(2)
+!!$acc loop collapse(2)
             DO ICR=1,4
               DO ICL=1,2
                 WCORN(IJ,K,M,ICR,ICL) = WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
@@ -801,11 +801,12 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER GRID POINTS
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
-#ifdef OMPGPU
-!$omp end target teams distribute parallel do simd
-#else
-!$acc end parallel
-#endif
+!#ifdef OMPGPU
+!!$omp end target teams distribute parallel do simd
+!#else
+!!$acc end parallel
+!#endif
+!      CALL CTUW_OFFLOAD()
 
 IF (LHOOK) CALL DR_HOOK('CTUW',1,ZHOOK_HANDLE)
 

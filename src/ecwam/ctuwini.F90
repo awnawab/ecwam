@@ -59,11 +59,11 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 
       NLAND = NSUP+1
       
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(2)
-#else
-      !$acc parallel loop independent collapse(2)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(2)
+!#else
+!      !$acc parallel loop independent collapse(2)
+!#endif
       DO IC=1,2
         DO IJ = KIJS,KIJL
           IF (KLAT(IJ,IC,1) < NLAND .AND. KLAT(IJ,IC,2) < NLAND) THEN
@@ -82,17 +82,17 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDIF
         ENDDO
       ENDDO
-#ifdef OMPGPU
-      !$omp end target teams distribute parallel do simd
-#else
-      !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!      !$omp end target teams distribute parallel do simd
+!#else
+!      !$acc end parallel
+!#endif
       
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(2)
-#else
-      !$acc parallel loop independent collapse(2)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(2)
+!#else
+!      !$acc parallel loop independent collapse(2)
+!#endif
       DO ICR=1,4
         DO IJ = KIJS,KIJL
           IF (KCOR(IJ,ICR,1) < NLAND .AND. KCOR(IJ,ICR,2) < NLAND) THEN
@@ -111,20 +111,20 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDIF
         ENDDO
       ENDDO
-#ifdef OMPGPU
-      !$omp end target teams distribute parallel do simd
-#else
-      !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!      !$omp end target teams distribute parallel do simd
+!#else
+!      !$acc end parallel
+!#endif
 
 
 !     INITIALISATION
 
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(5)
-#else
-      !$acc parallel loop independent collapse(5)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(5)
+!#else
+!      !$acc parallel loop independent collapse(5)
+!#endif
       DO ICL=1,2
         DO IC=1,2
           DO M=1,NFRE_RED
@@ -136,18 +136,18 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
       ENDDO
-#ifdef OMPGPU
-      !$omp end target teams distribute parallel do simd
-#else
-      !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!      !$omp end target teams distribute parallel do simd
+!#else
+!      !$acc end parallel
+!#endif
 
 
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(4)
-#else
-      !$acc parallel loop independent collapse(4)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(4)
+!#else
+!      !$acc parallel loop independent collapse(4)
+!#endif
       DO IC=1,2
         DO M=1,NFRE_RED
           DO K=1,NANG
@@ -157,18 +157,18 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
       ENDDO
-#ifdef OMPGPU
-      !$omp end target teams distribute parallel do simd
-#else
-      !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!      !$omp end target teams distribute parallel do simd
+!#else
+!      !$acc end parallel
+!#endif
 
 
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(5)
-#else
-      !$acc parallel loop independent collapse(5)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(5)
+!#else
+!      !$acc parallel loop independent collapse(5)
+!#endif
       DO ICL=1,2
         DO ICR=1,4
           DO M=1,NFRE_RED
@@ -180,11 +180,11 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
       ENDDO
-#ifdef OMPGPU
-      !$omp end target teams distribute parallel do simd
-#else
-      !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!      !$omp end target teams distribute parallel do simd
+!#else
+!      !$acc end parallel
+!#endif
 
 
 
@@ -196,17 +196,17 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
 !*        COMPUTE COS PHI FACTOR FOR ADJOINING GRID POINT.
 !         (for all grid points)
 
-#ifdef WAM_GPU
-        CALL CTUWINI_OFFLOAD()
-#else
+!#ifdef WAM_GPU
+!        CALL CTUWINI_OFFLOAD()
+!#else
         CALL CTUWINI_SET_POINTERS()
-#endif
+!#endif
 
-#ifdef OMPGPU
-      !$omp target teams distribute parallel do simd collapse(2) private(KY,KK,KKM) map(to:KXLT)
-#else
-      !$acc parallel loop independent collapse(2) private(KY,KK,KKM) present(KXLT)
-#endif
+!#ifdef OMPGPU
+!      !$omp target teams distribute parallel do simd collapse(2) private(KY,KK,KKM) map(to:KXLT)
+!#else
+!      !$acc parallel loop independent collapse(2) private(KY,KK,KKM) present(KXLT)
+!#endif
           DO IC=1,2
             DO IJ = KIJS,KIJL
               KY=KXLT(IJ)
@@ -215,11 +215,12 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
               DP(IJ,IC) = COSPH(KKM)*COSPHM1_EXT(IJ)
             ENDDO
           ENDDO
-#ifdef OMPGPU
-       !$omp end target teams distribute parallel do simd
-#else
-       !$acc end parallel
-#endif
+!#ifdef OMPGPU
+!       !$omp end target teams distribute parallel do simd
+!#else
+!       !$acc end parallel
+!#endif
+!        CALL CTUWINI_OFFLOAD()
        ENDIF
 
 

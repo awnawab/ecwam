@@ -95,20 +95,24 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !*      WITHOUT DEPTH OR/AND CURRENT REFRACTION.
 !       ----------------------------------------
 
-#ifdef OMPGPU
-          !$omp target teams distribute collapse(2) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
-          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
-#else
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
-#endif
+!#ifdef OMPGPU
+!!$omp target update from(F3,F1,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
+!!$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+!#endif
+!#ifdef OMPGPU
+!          !$omp target teams distribute collapse(2) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
+!          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+!#else
+!          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+!#endif
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-              !$omp parallel do simd
-#endif
+!#ifdef OMPGPU
+!              !$omp parallel do simd
+!#endif
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
      &                (1.0_JWRB-SUMWN(IJ,K,M))* F1(IJ           ,K  ,M) &
@@ -123,9 +127,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M,-1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-                !$omp parallel do simd
-#endif
+!#ifdef OMPGPU
+!                !$omp parallel do simd
+!#endif
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
@@ -135,9 +139,9 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M, 1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-                !$omp parallel do simd
-#endif
+!#ifdef OMPGPU
+!                !$omp parallel do simd
+!#endif
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
@@ -145,11 +149,14 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               ENDIF
             ENDDO
           ENDDO
-#ifdef OMPGPU
-          !$omp end target teams distribute
-#else
-          !$acc end kernels
-#endif
+!#ifdef OMPGPU
+!          !$omp end target teams distribute
+!#else
+!          !$acc end kernels
+!#endif
+!#ifdef OMPGPU
+!!$omp target update to(F3)
+!#endif
 
         ELSE
 !*      DEPTH AND CURRENT REFRACTION.
