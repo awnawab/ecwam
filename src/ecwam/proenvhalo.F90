@@ -60,18 +60,13 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
-#ifdef OMPGPU
-!$omp target data map(to:WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
-!$omp & map(to:BUFFER_EXT)
-#else
 !$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
 !$acc present(BUFFER_EXT)
-#endif
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute private(ICHNK, KIJS, IJSB, KIJL, IJLB)
+!$omp target teams distribute
 #else
 !$acc kernels loop private(ICHNK, KIJS, IJSB, KIJL, IJLB)
 #endif
@@ -85,7 +80,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
         IJLB = IJFROMCHNK(KIJL, ICHNK)
 
 #ifdef OMPGPU        
-!$omp parallel do
+!$omp parallel do collapse(2)
 #else
 !$acc loop
 #endif
@@ -97,6 +92,11 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 
+#ifdef OMPGPU        
+!$omp parallel do
+#else
+!$acc loop
+#endif
         DO IJ = IJSB, IJLB
           BUFFER_EXT(IJ, 3*NFRE_RED+1) = DELLAM1(IJ - IJSB + KIJS,ICHNK)
           BUFFER_EXT(IJ, 3*NFRE_RED+2) = COSPHM1(IJ - IJSB + KIJS,ICHNK)
@@ -126,6 +126,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 
 #ifdef OMPGPU
       !$omp target map(to:WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
+      !$omp parallel do
 #else
       !$acc kernels present(WAVNUM_LAND,CGROUP_LAND,OMOSNH2KD_LAND)
 #endif
@@ -146,11 +147,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
       !$acc end kernels
 #endif
 
-#ifdef OMPGPU
-!$omp end target data
-#else
 !$acc end data
-#endif
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',1,ZHOOK_HANDLE)
 

@@ -154,8 +154,8 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !         ----------------------
 
 #ifdef OMPGPU
-!$omp target teams distribute parallel do collapse(3) private(CGX,CGY,CGYP,IX,KY,UU,UREL,ISSU,VV,VREL, &
-!$omp & ISSV,DXP,DYP,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,DXX,DYY,GRIDAREAM1,WEIGHT) map(to:KXLT,IXLG)
+!$omp target teams distribute parallel do collapse(3) private(CGX,CGY,ISSU,ISSV,ADXP,ADYP,DXUP,DXDW,DYUP,DYDW,WEIGHT) &
+!$omp & map(to:KXLT,IXLG)
 #else
 !$acc kernels present(KXLT,IXLG)
 #endif
@@ -430,7 +430,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !     ---------------------
 
 #ifdef OMPGPU
-      !$omp target teams distribute private(km1,kp1,sp,sm,DELFR0,DRGP,DRGM,DRDP,DRDM,DRCP,DRCM)
+      !$omp target teams distribute map(to:KXLT)
 #else
       !$acc parallel loop private(DRGP,DRGM) present(KXLT)
 #endif
@@ -514,7 +514,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
 !       -------------------
         IF (IREFRA == 0) THEN
 #ifdef OMPGPU
-!$omp parallel do collapse(2) private(DTHP,DTHM)
+!$omp parallel do collapse(2)
 #else
 !$acc loop collapse(2)
 #endif
@@ -746,7 +746,6 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           ENDDO  ! END LOOP OVER GRID POINTS
         ENDDO  ! END LOOP OVER FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
-#endif
 
       DO IJ=KIJS,KIJL
         IF (LCFLFAIL(IJ)) THEN
@@ -754,13 +753,14 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           RETURN
         ENDIF
       ENDDO
+#endif
 
 
 !!!!!!INCLUDE THE BLOCKING COEFFICIENTS INTO THE WEIGHTS OF THE
 !     SURROUNDING POINTS.
 
 #ifdef OMPGPU
-!$omp target teams distribute parallel do simd collapse(3)
+!$omp target teams distribute parallel do collapse(3)
 #else
 !$acc parallel loop collapse(3)
 #endif
@@ -769,7 +769,11 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
           DO IJ=KIJS,KIJL
 
 !           POINTS ON SURROUNDING LATITUDES 
+#ifdef OMPGPU
+!$omp parallel do collapse(2)
+#else
 !$acc loop collapse(2)
+#endif
             DO IC=1,2
               DO ICL=1,2
                 WLATN(IJ,K,M,IC,ICL) = WLATN(IJ,K,M,IC,ICL)*OBSLAT(IJ,M,IC) 
@@ -777,13 +781,21 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
             ENDDO
 
 !           POINTS ON SURROUNDING LONGITUDE
+#ifdef OMPGPU
+!$omp parallel do
+#else
 !$acc loop
+#endif
             DO IC=1,2
               WLONN(IJ,K,M,IC) = WLONN(IJ,K,M,IC)*OBSLON(IJ,M,IC)
             ENDDO
 
 !           SURROUNDING CORNER POINTS
+#ifdef OMPGPU
+!$omp parallel do collapse(2)
+#else
 !$acc loop collapse(2)
+#endif
             DO ICR=1,4
               DO ICL=1,2
                 WCORN(IJ,K,M,ICR,ICL) = WCORN(IJ,K,M,ICR,ICL)*OBSCOR(IJ,M,KCR(K,ICR))
@@ -794,7 +806,7 @@ IF (LHOOK) CALL DR_HOOK('CTUW',0,ZHOOK_HANDLE)
         ENDDO  ! END LOOP ON FREQUENCIES
       ENDDO  ! END LOOP OVER DIRECTIONS
 #ifdef OMPGPU
-!$omp end target teams distribute parallel do simd
+!$omp end target teams distribute parallel do
 #else
 !$acc end parallel
 #endif

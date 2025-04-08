@@ -126,7 +126,7 @@
       CALL GSTATS(1892,0)
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute private(IPROC) &
+!$omp target teams distribute &
 !$omp & map(to:ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
 #else
 !$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
@@ -135,7 +135,7 @@
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
 #ifdef OMPGPU
-          !$omp parallel do collapse(3) private(IJ,KCOUNT,M,K,IH)
+          !$omp parallel do collapse(3)
 #else
           !$acc loop independent collapse(3) private(IJ,KCOUNT,M,K,IH)
 #endif
@@ -257,7 +257,7 @@
       CALL GSTATS(1893,0)
 #ifdef WAM_GPU
 #ifdef OMPGPU
-      !$omp target teams distribute private(IPROC) &
+      !$omp target teams distribute &
       !$omp & map(to:ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
 #else
       !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
@@ -266,7 +266,7 @@
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
 #ifdef OMPGPU
-        !$omp parallel do collapse(3) private(IJ,KCOUNT,M,K,IH)
+        !$omp parallel do collapse(3)
 #else
         !$acc loop vector independent collapse(3) private(IJ,KCOUNT,M,K,IH)
 #endif

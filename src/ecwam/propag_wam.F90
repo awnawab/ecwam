@@ -100,8 +100,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 
 #ifdef OMPGPU
-!$omp target data map(to:FL1,WAVNUM,CGROUP,OMOSNH2KD,DEPTH,DELLAM1,COSPHM1,UCUR,VCUR) &
-!$omp & map(alloc:FL1_EXT,FL3_EXT,BUFFER_EXT)
+!$omp target data map(alloc:FL1_EXT,FL3_EXT,BUFFER_EXT)
 #else
 !$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR) &
 !$acc & create(FL1_EXT,FL3_EXT,BUFFER_EXT)
@@ -122,7 +121,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
 #ifdef OMPGPU
-        !$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS, IJSB, KIJL, IJLB)
+        !$omp target teams distribute
 #else
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
 #endif
@@ -135,7 +134,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           KIJL = KIJL4CHNK(ICHNK)
           IJLB = IJFROMCHNK(KIJL, ICHNK)
 #ifdef OMPGPU
-          !$omp parallel do collapse(2)
+          !$omp parallel do collapse(3)
 #else
           !$acc loop independent collapse(2)
 #endif
@@ -159,7 +158,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 !       SET THE DUMMY LAND POINT TO 0.
 #ifdef OMPGPU
-        !$omp target teams distribute parallel do simd collapse(2)
+        !$omp target teams distribute parallel do collapse(2)
 #else
         !$acc kernels
 #endif
@@ -169,7 +168,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
           ENDDO
         ENDDO
 #ifdef OMPGPU
-        !$omp end target teams distribute parallel do simd
+        !$omp end target teams distribute parallel do
 #else
         !$acc end kernels
 #endif
@@ -278,7 +277,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 
 #ifdef WAM_GPU
 #ifdef OMPGPU
-!$omp target teams distribute thread_limit( NPROMA_WAM )
+!$omp target teams distribute
 #else
 !$acc kernels loop private(KIJS, KIJL, FL1_EXT)
 #endif
@@ -390,7 +389,7 @@ ENDIF  ! end sub time steps (if needed)
 !!!  So need to convert back to the nproma_wam chuncks
 #ifdef WAM_GPU
 #ifdef OMPGPU
-        !$omp target teams distribute thread_limit( NPROMA_WAM ) private(KIJS, IJSB, KIJL, IJLB)
+        !$omp target teams distribute
 #else
         !$acc kernels loop independent private(KIJS, IJSB, KIJL, IJLB)
 #endif
