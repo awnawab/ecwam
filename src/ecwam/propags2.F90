@@ -96,18 +96,16 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
 !       ----------------------------------------
 
 #ifdef OMPGPU
-          !$omp target teams distribute collapse(2) map(to:F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN, &
-          !$omp & WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$omp target teams distribute parallel do collapse(3)
 #else
-          !$acc kernels loop present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,LLWKPMN,KPM)
+          !$acc kernels loop collapse(3) present(F1,F3,KLON,KLAT,KCOR,SUMWN,WLONN,WLATN,WCORN,JXO,JYO,KCR,WKPMN,KPM)
 #endif
           DO K = 1, NANG
             DO M = ND3S, ND3E
 
+#ifndef WAM_GPU
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-              !$omp parallel do simd
 #endif
               DO IJ = KIJS, KIJL
                 F3(IJ,K,M) =                                            &
@@ -117,15 +115,18 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
      &         + WLATN(IJ,K,M,JYO(K,1),1) * F1(KLAT(IJ,JYO(K,1),1),K  ,M) &
      &         + WLATN(IJ,K,M,JYO(K,1),2) * F1(KLAT(IJ,JYO(K,1),2),K  ,M) &
      &         + WCORN(IJ,K,M,1,1)        * F1(KCOR(IJ,KCR(K,1),1),K  ,M) &
+#ifdef WAM_GPU
+     &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M) &
+     &         + WKPMN(IJ,K,M,-1)*F1(IJ,KPM(K,-1),M) + WKPMN(IJ,K,M,1)*F1(IJ,KPM(K,1),M)
+#else
      &         + WCORN(IJ,K,M,1,2)        * F1(KCOR(IJ,KCR(K,1),2),K  ,M)
+#endif
               ENDDO
 
+#ifndef WAM_GPU
               IF (LLWKPMN(K,M,-1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-                !$omp parallel do simd
-#endif
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M,-1)* F1(IJ,KPM(K,-1),M)
@@ -135,20 +136,18 @@ IF (LHOOK) CALL DR_HOOK('PROPAGS2',0,ZHOOK_HANDLE)
               IF (LLWKPMN(K,M, 1)) THEN
 !DIR$ IVDEP
 !DIR$ PREFERVECTOR
-#ifdef OMPGPU
-                !$omp parallel do simd
-#endif
                 DO IJ = KIJS, KIJL
                   F3(IJ,K,M) = F3(IJ,K,M)                             &
      &       +    WKPMN(IJ,K,M, 1)* F1(IJ,KPM(K, 1),M)
                 ENDDO
               ENDIF
+#endif
             ENDDO
           ENDDO
 #ifdef OMPGPU
-          !$omp end target teams distribute
+          !$omp end target teams distribute parallel do
 #else
-          !$acc end kernels
+          !$acc end kernels loop
 #endif
 
         ELSE
