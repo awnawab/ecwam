@@ -129,8 +129,9 @@ IF(LUPDTUS) THEN
     ENDDO
 
     IF (LLGCBZ0) THEN
-      !$loki inline
+!$loki remove
       CALL HALPHAP(KIJS, KIJL, WAVNUM, COSWDIF, FL1, HALP)
+!$loki end remove
     ELSE
       HALP(KIJS:KIJL) = 0.0_JWRB
     ENDIF
