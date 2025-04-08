@@ -160,10 +160,10 @@ CALL WAMINTGR_OFFLOAD_1()
 IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
 
 #ifdef OMPGPU
-!$omp target data map(to:BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, & 
+!$omp target data map(to:WAVNUM, CGROUP, OMOSNH2KD, FL1, & 
 !$omp &               DEPTH, DELLAM1, COSPHM1, UCUR, VCUR)
 #else
-!$acc data present(BLK2GLO, WAVNUM, CGROUP, OMOSNH2KD, FL1, & 
+!$acc data present(WAVNUM, CGROUP, OMOSNH2KD, FL1, & 
 !$acc &            DEPTH, DELLAM1, COSPHM1, UCUR, VCUR)
 #endif
 
@@ -251,21 +251,18 @@ IF (CDATE >= CDTIMPNEXT) THEN
 
   ELSE
 !   NO SOURCE TERM CONTRIBUTION
-#ifdef WAM_GPU
+    CALL WAMINTGR_OFFLOAD_3()
 #ifdef OMPGPU
-!$omp target teams distribute map(to:MIJ,VARS_4D)
+!$omp target teams distribute map(to:MIJ_PTR,FL1,XLLWS)
 #else
-!$acc kernels present(MIJ,VARS_4D)
-#endif
-#else
-!$OMP      PARALLEL DO SCHEDULE(STATIC) PRIVATE(ICHNK)  
+!$acc kernels present(MIJ_PTR,FL1,XLLWS)
 #endif
     DO ICHNK = 1, NCHNK
 #ifdef OMPGPU
       !$omp parallel do 
 #endif
       DO IJ = 1, NPROMA_WAM
-        MIJ%PTR(IJ,ICHNK) = NFRE
+        MIJ_PTR(IJ,ICHNK) = NFRE
       ENDDO
 
 #ifdef OMPGPU
@@ -274,20 +271,16 @@ IF (CDATE >= CDTIMPNEXT) THEN
       DO M = 1, NFRE
         DO K = 1, NANG
           DO IJ = 1, NPROMA_WAM
-            VARS_4D%FL1(IJ,K,M,ICHNK) = MAX(VARS_4D%FL1(IJ,K,M,ICHNK), EPSMIN)
-            VARS_4D%XLLWS(IJ,K,M,ICHNK) = 0.0_JWRB
+            FL1(IJ,K,M,ICHNK) = MAX(FL1(IJ,K,M,ICHNK), EPSMIN)
+            XLLWS(IJ,K,M,ICHNK) = 0.0_JWRB
           ENDDO
         ENDDO
       ENDDO
     ENDDO
-#ifdef WAM_GPU
 #ifdef OMPGPU
 !$omp end target teams distribute
 #else
 !$acc end kernels
-#endif
-#else
-!$OMP      END PARALLEL DO
 #endif
   ENDIF
   CALL GSTATS(1431,1)
@@ -388,5 +381,11 @@ SUBROUTINE WAMINTGR_OFFLOAD_2()
   CALL VARS_4D%F_XLLWS%GET_DEVICE_DATA_RDWR(XLLWS)
 
 END SUBROUTINE WAMINTGR_OFFLOAD_2
+
+SUBROUTINE WAMINTGR_OFFLOAD_3()
+  CALL MIJ%F_PTR%GET_DEVICE_DATA_RDWR(MIJ_PTR)
+  CALL VARS_4D%F_XLLWS%GET_DEVICE_DATA_RDWR(XLLWS)
+  CALL VARS_4D%F_FL1%GET_DEVICE_DATA_RDWR(FL1)
+END SUBROUTINE WAMINTGR_OFFLOAD_3
 
 END SUBROUTINE WAMINTGR_LOKI_GPU
