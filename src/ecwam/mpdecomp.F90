@@ -1936,9 +1936,9 @@ WRITE(IU06,*) ''
 CALL FLUSH(IU06)
 
 #ifdef OMPGPU
-!$omp target update to(KLON, KLAT, KCOR, WLAT, WCOR)
+!$omp target update to(KLON, KLAT, KCOR, WLAT, WCOR, OBSLAT, OBSCOR, OBSLON)
 #else
-!$acc update device(KLON, KLAT, KCOR, WLAT, WCOR)
+!$acc update device(KLON, KLAT, KCOR, WLAT, WCOR, OBSLAT, OBSCOR, OBSLON)
 #endif
 
 IF (LHOOK) CALL DR_HOOK('MPDECOMP',1,ZHOOK_HANDLE)

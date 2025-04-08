@@ -170,6 +170,9 @@
 !$omp declare target(SUMWN)
 !$omp declare target(LLWKPMN)
 !$omp declare target(KPM)
+!$omp declare target(OBSLAT)
+!$omp declare target(OBSLON)
+!$omp declare target(OBSCOR)
 #else
 !$acc declare create(WLAT)
 !$acc declare create(KLAT)
@@ -186,5 +189,8 @@
 !$acc declare create(SUMWN)
 !$acc declare create(LLWKPMN)
 !$acc declare create(KPM)
+!$acc declare create(OBSLAT)
+!$acc declare create(OBSLON)
+!$acc declare create(OBSCOR)
 #endif
         END MODULE YOWUBUF
