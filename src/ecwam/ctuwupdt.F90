@@ -97,21 +97,11 @@ IF (LHOOK) CALL DR_HOOK('CTUWUPDT',0,ZHOOK_HANDLE)
 IF (LFRSTCTU) THEN
 
   IF (.NOT. ALLOCATED(MPM)) ALLOCATE(MPM(NFRE_RED,-1:1))
-#ifdef OMPGPU
-  !$omp target teams distribute parallel do simd
-#else
-  !$acc kernels
-#endif
   DO M=1,NFRE_RED
     MPM(M,-1)= MAX(1,M-1)
     MPM(M,0) = M
     MPM(M,1) = MIN(NFRE_RED,M+1)
   ENDDO
-#ifdef OMPGPU
-  !$omp end target teams distribute parallel do simd
-#else
-  !$acc end kernels
-#endif
 
   IF (.NOT. ALLOCATED(KPM)) ALLOCATE(KPM(NANG,-1:1))
   IF (.NOT. ALLOCATED(JXO)) ALLOCATE(JXO(NANG,2))
@@ -125,7 +115,7 @@ IF (LFRSTCTU) THEN
 #endif
 
 #ifdef OMPGPU
- !$omp target teams distribute parallel do simd private(KM1, KP1) map(to:COSTH,SINTH)
+ !$omp target teams distribute parallel do
 #else
  !$acc kernels copyin(COSTH,SINTH)
 #endif
@@ -181,7 +171,7 @@ IF (LFRSTCTU) THEN
     ENDIF
   ENDDO
 #ifdef OMPGPU
-  !$omp end target teams distribute parallel do simd
+  !$omp end target teams distribute parallel do
 #else
   !$acc end kernels
 #endif
@@ -220,9 +210,7 @@ ENDIF
 #endif
    NPROMA=(IJL-IJS+1)/MTHREADS + 1
 
-#ifdef WAM_GPU
-!$acc data present(KLAT,WLAT,KCOR,WCOR,WLATN,WLONN,WCORN)
-#else
+#ifndef WAM_GPU
 !$OMP   PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JKGLO, KIJS, KIJL)
 #endif
 DO JKGLO = IJS, IJL, NPROMA
@@ -231,9 +219,7 @@ DO JKGLO = IJS, IJL, NPROMA
   CALL CTUWINI (KIJS, KIJL, NINF, NSUP, BLK2GLO, COSPHM1_EXT,   &
  &                  WLATM1, WCORM1, DP)
 ENDDO
-#ifdef WAM_GPU
-!$acc end data
-#else
+#ifndef WAM_GPU
 !$OMP  END PARALLEL DO
 #endif
 
@@ -358,6 +344,7 @@ IF (IREFRA == 2 .OR. IREFRA == 3) THEN
     ENDDO
   ENDDO
 ENDIF
+#endif
 
 IF (ALLOCATED(THDD)) DEALLOCATE(THDD)
 IF (ALLOCATED(THDC)) DEALLOCATE(THDC)
