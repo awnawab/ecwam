@@ -415,6 +415,10 @@ if( HAVE_ECFLOW )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_ECFLOW)
 endif()
 
+if( HAVE_CUDA OR HAVE_HIPFORT )
+  list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_HAVE_HIC)
+endif()
+
 if( HAVE_ACC OR HAVE_OMP_OFFLOAD )
   list(APPEND ECWAM_PRIVATE_DEFINITIONS WAM_GPU)
 endif()
@@ -438,6 +442,7 @@ ecbuild_add_library(
                      ${MPI_Fortran_LIBRARIES}
                      ${${PNAME}_OCEANMODEL_LIBRARIES}
                      field_api_${prec}
+                     $<${HAVE_HIPFORT}:hipfort::hip>
     PRIVATE_LIBS     eccodes_f90
                      ${MULTIO_LIBRARIES}
                      ${OpenMP_Fortran_LIBRARIES}
@@ -445,7 +450,7 @@ ecbuild_add_library(
                      $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
     PUBLIC_INCLUDES  $<INSTALL_INTERFACE:include>
     PRIVATE_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS} $<${HAVE_CUDA}:WAM_HAVE_CUDA>
+    PRIVATE_DEFINITIONS ${ECWAM_PRIVATE_DEFINITIONS}
     PUBLIC_DEFINITIONS ${ECWAM_DEFINITIONS}
 )
 
