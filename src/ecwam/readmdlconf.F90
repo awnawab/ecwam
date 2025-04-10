@@ -143,7 +143,7 @@ SUBROUTINE READMDLCONF (IU07)
       IJL = NIBLO
 
 #ifdef OMPGPU
-!$omp target update to(SINPH,COSPH)
+!$omp target enter data map(to:SINPH,COSPH)
 #else
 !$acc update device(SINPH,COSPH)
 #endif

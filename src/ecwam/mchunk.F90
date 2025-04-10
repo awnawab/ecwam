@@ -90,7 +90,7 @@ ENDDO
   ENDIF
 
 #ifdef OMPGPU
-!$omp target update to(IJFROMCHNK,KIJL4CHNK)
+!$omp target enter data map(to:IJFROMCHNK,KIJL4CHNK)
 #else
 !$acc update device(IJFROMCHNK,KIJL4CHNK)
 #endif

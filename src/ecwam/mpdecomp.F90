@@ -1936,7 +1936,7 @@ WRITE(IU06,*) ''
 CALL FLUSH(IU06)
 
 #ifdef OMPGPU
-!$omp target update to(KLON, KLAT, KCOR, WLAT, WCOR, OBSLAT, OBSCOR, OBSLON)
+!$omp target enter data map(to:KLON, KLAT, KCOR, WLAT, WCOR, OBSLAT, OBSCOR, OBSLON)
 #else
 !$acc update device(KLON, KLAT, KCOR, WLAT, WCOR, OBSLAT, OBSCOR, OBSLON)
 #endif
