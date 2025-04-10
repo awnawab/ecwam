@@ -20,7 +20,9 @@ projects :
     - eccodes :
         git     : https://github.com/ecmwf/eccodes
         version : master
-        cmake   : ENABLE_MEMFS=ON
+        cmake   : >
+            ENABLE_MEMFS=ON
+            ENABLE_AEC=OFF
 
     - fckit :
         git     : https://github.com/ecmwf/fckit
