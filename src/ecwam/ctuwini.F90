@@ -60,6 +60,7 @@ IF (LHOOK) CALL DR_HOOK('CTUWINI',0,ZHOOK_HANDLE)
       NLAND = NSUP+1
 
 #ifdef OMPGPU
+      !$omp target enter data map(to:WLAT,KLAT,KCOR,WCOR)
       !$omp target teams distribute parallel do collapse(2)
 #else
       !$acc parallel loop independent collapse(2)
