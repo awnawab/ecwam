@@ -82,7 +82,7 @@ IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
 #ifdef OMPGPU        
 !$omp parallel do collapse(2)
 #else
-!$acc loop
+!$acc loop collapse(2)
 #endif
         DO M = 1, NFRE_RED
           DO IJ = IJSB, IJLB

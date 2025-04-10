@@ -279,7 +279,7 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 #ifdef OMPGPU
 !$omp target teams distribute
 #else
-!$acc kernels loop private(KIJS, KIJL, FL1_EXT)
+!$acc kernels loop private(KIJS, KIJL)
 #endif
 #else
 !$OMP            PARALLEL DO SCHEDULE(STATIC,1) PRIVATE(JKGLO, KIJS, KIJL, M, K, IJ)
