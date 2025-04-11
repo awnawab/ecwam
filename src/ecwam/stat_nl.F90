@@ -118,7 +118,7 @@
           ELSEIF (X < EPS) THEN
             V_G = C_0
           ELSE
-            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            SINH_X = (EXP(2._JWRB*X) - EXP(-2._JWRB*X)) * 0.5_JWRB
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH_X)
           ENDIF
           V_G_SQ=V_G**2

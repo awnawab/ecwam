@@ -53,7 +53,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF(XK,D)
             V_G = 0.5_JWRB*C_0
             V_G = C_0
           ELSE
-            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            SINH_X = (EXP(2._JWRB*X) - EXP(-2._JWRB*X)) * 0.5_JWRB
             V_G = 0.5_JWRB*C_0*(1.0_JWRB+2.0_JWRB*X/SINH_X)
           ENDIF
           DV_G = (T_0-X*(1.0_JWRB-T_0**2))**2+4.0_JWRB*X**2*T_0**2*(1.0_JWRB-T_0**2)
