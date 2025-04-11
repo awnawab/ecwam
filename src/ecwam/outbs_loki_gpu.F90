@@ -133,6 +133,7 @@ SUBROUTINE OUTBS_LOKI_GPU (MIJ, FL1, XLLWS,                            &
 !        ------------------------
 
 IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',0,ZHOOK_HANDLE_DATA_OFFLOAD)
+!$loki hoist-insert
       CALL OUTBS_OFFLOAD()
 IF (LHOOK) CALL DR_HOOK('DATA_OFFLOAD',1,ZHOOK_HANDLE_DATA_OFFLOAD)
 
