@@ -157,7 +157,8 @@ find_package(hipfort COMPONENTS hip)
 ecbuild_add_option( FEATURE HIPFORT
                     DEFAULT OFF
                     DESCRIPTION "Support for the HIP Fortran runtime API"
-                    CONDITION hipfort_FOUND AND HAVE_OMP_OFFLOAD )
+#                    CONDITION hipfort_FOUND AND HAVE_OMP_OFFLOAD )
+                    CONDITION 0 )
 
 ### GPU-aware MPI
 ecbuild_add_option( FEATURE GPU_AWARE_MPI

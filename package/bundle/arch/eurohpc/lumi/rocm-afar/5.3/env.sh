@@ -45,8 +45,10 @@ export HDF5_ROOT=${_HDF5_ROOT}
 LD_LIBRARY_PATH=/users/nawabahm/rocm-afar-7110-drop-5.3.0/lib:$LD_LIBRARY_PATH
 LD_LIBRARY_PATH=/users/nawabahm/rocm-afar-7110-drop-5.3.0/lib/llvm/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-export PATH=/users/nawabahm/rocm-afar-7110-drop-5.3.0/lib/llvm/bin:/users/nawabahm/rocm-afar-7110-drop-5.3.0/bin:$PATH
-export hipfort_ROOT=/users/nawabahm/hipfort/install
+PATH=/users/nawabahm/rocm-afar-7110-drop-5.3.0/lib/llvm/bin:$PATH
+PATH=/users/nawabahm/rocm-afar-7110-drop-5.3.0/bin:$PATH
+export PATH=$PATH
+#export hipfort_ROOT=/users/nawabahm/hipfort/install
 
 # Export environment variable3s
 export MPI_HOME=${MPICH_DIR}
