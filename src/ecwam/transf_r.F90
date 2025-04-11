@@ -60,7 +60,7 @@ REAL(KIND=JWRB) FUNCTION TRANSF_R(XK0,D)
           IF (X < EPS) THEN
             V_G = C_0
           ELSE
-            SINH_X = (EXP(2._JWRB*X) - EXP(2._JWRB*X)) * 0.5_JWRB
+            SINH_X = (EXP(2._JWRB*X) - EXP(-2._JWRB*X)) * 0.5_JWRB
             V_G = 0.5_JWRB*C_0*(1._JWRB+2._JWRB*X/SINH_X)
           ENDIF
           D2OM = (T_0-X*(1._JWRB-T_0_SQ))**2+4._JWRB*X**2*T_0_SQ*(1._JWRB-T_0_SQ)
