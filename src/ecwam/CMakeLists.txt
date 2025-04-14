@@ -444,7 +444,6 @@ endif()
 
 ecbuild_add_library(
     TARGET           ${ecwam}
-    TYPE             ${LIBRARY_TYPE}
     SOURCES          ${ecwam_srcs}
     PUBLIC_LIBS      fiat parkind_${prec} ${ecwam}_intfb
                      ${MPI_Fortran_LIBRARIES}
