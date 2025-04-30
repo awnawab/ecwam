@@ -33,7 +33,7 @@ find_preproc_files
 find_preset_files ${begofrn}
 
 lgribin=F
-lgribout=F
+#lgribout=F
 lnocdin=T
 
 output_fields=$(read_config output.fields.name[:] --default="")
@@ -85,6 +85,8 @@ nproma=$(read_config nproma --default=24)
 iphys=$(read_config iphys --default=1)
 llgcbz0=$(read_config llgcbz0 --default=F)
 llnormagam=$(read_config llnormagam --default=F)
+lwamanout=$(read_config lwamanout --default=T)
+lgribout=$(read_config lgribout --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -253,6 +255,7 @@ cat > wam_namelist << EOF
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",
   NFLAG(5)              = F,
+  LWAMANOUT             = ${lwamanout},
   ${OUTPUT_FLAGS}
 /
 ${NAWI}
