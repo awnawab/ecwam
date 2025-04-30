@@ -159,7 +159,7 @@
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB) :: RMISS
       REAL(KIND=JWRB) :: ZRCHAR
-      REAL(KIND=JWRU) :: time0, time, timestep_start, timestep0_start
+      REAL(KIND=JWRU) :: time0, time, time1, timestep_start, timestep0_start, timestep1_start
 
       CHARACTER(LEN=3) :: DBNAME
       CHARACTER(LEN=14) :: ZERO,CBEGDAT
@@ -333,6 +333,7 @@
       timestep0_start = - wam_user_clock()
       DO WHILE (CDTPRO < CDATEE .OR. CDTPRO == ZERO)
         timestep_start = - wam_user_clock()
+        IF(ISTEP == 1) timestep1_start = - wam_user_clock()
         CALL WAVEMDL(CBEGDAT, PSTEP, KSTOP, KSTPW, LLWAVEINIT_ONLY,     &
      &             NFIELDS, NGPTOTG, NC, NR,                            &
      &             IGRIB_HANDLE_DUM, IGRIB_HANDLE_DUM2,                 &
@@ -348,6 +349,7 @@
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)
         time = (timestep_start+wam_user_clock())*1.e-6
+        IF(ISTEP > 0) time1 = (timestep_start+wam_user_clock())*1.e-6
         ISTEP = ISTEP+1
         IF (IRANK==1) THEN
           CALL WAM_MEMINFO(6,ISTEP)
@@ -358,6 +360,7 @@
       ENDDO
       IF (IRANK==1) THEN
         time = (timestep0_start+wam_user_clock())*1.e-6
+        time1 = (timestep1_start+wam_user_clock())*1.e-6
         WRITE(6,'(A,F8.2,A)') " WAVEMDL STEPS TOOK ",time," SECONDS"
       ENDIF
 
@@ -391,6 +394,8 @@
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
       WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', time, '         +'
+      WRITE (IU06,'(A)') ' + TOTAL USER TIME IN SECONDS EXCL. INIT +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', time1, '         +'
       WRITE (IU06,'(A)') ' + WAVE PROPAGATION TIME      +'
       WRITE (IU06,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
       WRITE (IU06,'(A)') ' + SOURCE TERM TIME           +'
@@ -402,6 +407,8 @@
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
         WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
         WRITE (6,'(A,F18.2,A)') ' + ', time, '         +'
+        WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS EXCL. INIT +'
+        WRITE (6,'(A,F18.2,A)') ' + ', time1, '         +'
         WRITE (6,'(A)') ' + WAVE PROPAGATION TIME      +'
         WRITE (6,'(A,F18.2,A)') ' + ', TIME_PROPAG, '         +'
         WRITE (6,'(A)') ' + SOURCE TERM TIME           +'
