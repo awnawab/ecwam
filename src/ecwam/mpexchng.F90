@@ -129,8 +129,7 @@
 !$omp target teams distribute &
 !$omp & map(to:ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
 #else
-!$acc kernels loop independent private(IPROC) present(ZCOMBUFS,FLD) &
-!$acc copyin(NTOPELST,NTOPE,IJTOPE)
+!$acc kernels loop independent present(ZCOMBUFS,FLD,NTOPELST,NTOPE,IJTOPE)
 #endif
       DO INGB=1,NGBTOPE !Total number of PE's to which information will be sent
         IPROC=NTOPELST(INGB)  !To which PE to send informations
@@ -260,8 +259,7 @@
       !$omp target teams distribute &
       !$omp & map(to:ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
 #else
-      !$acc kernels loop independent private(IPROC) present(ZCOMBUFR,FLD) &
-      !$acc copyin(NFROMPELST,NFROMPE,NIJSTART)
+      !$acc kernels loop independent present(ZCOMBUFR,FLD,NFROMPELST,NFROMPE,NIJSTART)
 #endif
       DO INGB=1,NGBFROMPE
         IPROC=NFROMPELST(INGB)
