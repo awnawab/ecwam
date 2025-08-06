@@ -65,15 +65,6 @@
       USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE MPL_MODULE, ONLY : MPL_RECV, MPL_SEND, MPL_WAIT, &
                            & JP_NON_BLOCKING_STANDARD, MPL_COMM_OML
-#ifdef WITH_GPU_AWARE_MPI
-      USE OML_MOD   , ONLY : OML_MY_THREAD
-      USE MPI_F08   , ONLY : MPI_ISEND, MPI_IRECV, MPI_COMM, MPI_REQUEST
-#ifdef WAM_HAVE_SINGLE_PRECISION
-      USE MPI_F08   , ONLY : ECWAM_MPI_DATATYPE => MPI_REAL4
-#else
-      USE MPI_F08   , ONLY : ECWAM_MPI_DATATYPE => MPI_REAL8
-#endif
-#endif
 
 !----------------------------------------------------------------------
 
@@ -91,12 +82,8 @@
       REAL(KIND=JWRB) :: ZDUM(2)
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFS(:,:)
       REAL(KIND=JWRB), ALLOCATABLE :: ZCOMBUFR(:,:)
-#ifdef WITH_GPU_AWARE_MPI
-      TYPE(MPI_COMM) :: ICOMM
-      TYPE(MPI_REQUEST) :: IREQUEST_LOCAL
-#endif
 
-      LOGICAL :: LLOK
+      LOGICAL :: LLOK, LDDEVICE_DATA
       INTEGER(KIND=JWIM) :: IERROR
 
 !----------------------------------------------------------------------
@@ -111,6 +98,12 @@
       CALL GSTATS_BARRIER(736)
 
       NDIM3 = ND3E-ND3S+1
+
+#ifdef WITH_GPU_AWARE_MPI
+      LDDEVICE_DATA = .TRUE.
+#else
+      LDDEVICE_DATA = .FALSE.
+#endif
 
       NBUFMAX=MAX(NTOPEMAX,NFROMPEMAX)*NDIM2*NDIM3
       ALLOCATE(ZCOMBUFS(NBUFMAX,NGBTOPE))
@@ -165,19 +158,9 @@
         IR=IR+1
         IPROC=NFROMPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NFROMPE(IPROC)
-#ifdef WITH_GPU_AWARE_MPI
-        ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
-!$acc host_data use_device(ZCOMBUFR)
-        CALL MPI_IRECV(ZCOMBUFR(1:KCOUNT,INGB),KCOUNT,                 &
-     &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
-     &     ICOMM,IREQUEST_LOCAL, IERROR)
-!$acc end host_data
-        IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
-#else
         CALL MPL_RECV(ZCOMBUFR(1:KCOUNT,INGB),KSOURCE=IPROC,KTAG=KTAG,  &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
-     &     CDSTRING='MPEXCHNG:')
-#endif
+     &     CDSTRING='MPEXCHNG:', LDDEVICE_DATA=LDDEVICE_DATA)
       ENDDO
 
       DO INGB=1,NGBTOPE
@@ -185,20 +168,12 @@
         IPROC=NTOPELST(INGB)
         KCOUNT=NDIM3*NDIM2*NTOPE(IPROC)
 
-#ifdef WITH_GPU_AWARE_MPI
-        ICOMM%MPI_VAL=MPL_COMM_OML(OML_MY_THREAD())
-!$acc host_data use_device(ZCOMBUFS)
-        CALL MPI_ISEND(ZCOMBUFS(1:KCOUNT,INGB),KCOUNT,                 &
-     &     ECWAM_MPI_DATATYPE,IPROC-1, KTAG,                           &
-     &     ICOMM,IREQUEST_LOCAL, IERROR)
-!$acc end host_data
-        IREQ(IR) = IREQUEST_LOCAL%MPI_VAL
-#else              
+#ifndef WITH_GPU_AWARE_MPI
 !$acc update self(ZCOMBUFS)
+#endif
         CALL MPL_SEND(ZCOMBUFS(1:KCOUNT,INGB),KDEST=IPROC,KTAG=KTAG,    &
      &     KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=IREQ(IR),         &
-     &     CDSTRING='MPEXCHNG:')
-#endif
+     &     CDSTRING='MPEXCHNG:', LDDEVICE_DATA=LDDEVICE_DATA)
       ENDDO
 
 !     NOW WAIT FOR ALL TO COMPLETE
