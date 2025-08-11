@@ -386,6 +386,7 @@ if( HAVE_GPU_AWARE_MPI )
   set( MPI_Fortran_LIBRARIES MPI::MPI_Fortran )
 endif()
 
+set( HAVE_MPI_F08 0 )
 if( HAVE_UNWAM )
   list(APPEND ecwam_srcs ${unwam_srcs})
   list(APPEND ECWAM_DEFINITIONS WAM_HAVE_UNWAM)
