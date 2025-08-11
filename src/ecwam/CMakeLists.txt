@@ -484,7 +484,11 @@ foreach( prec sp dp )
     endif()
 
     if( HAVE_CUDA )
-      target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
+      if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "25.5")
+        target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=pinned" )
+      else()
+        target_link_options( ecwam_${prec} PUBLIC "-cuda;-gpu=mem:separate:pinnedalloc" )
+      endif()
     endif()
 
     ecwam_target_compile_definitions_FILENAME( ecwam_${prec} )
