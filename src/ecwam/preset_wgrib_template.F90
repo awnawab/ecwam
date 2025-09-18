@@ -78,7 +78,6 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 
       IMPLICIT NONE
 #include "abort1.intfb.h"
-#include "wstream_strg.intfb.h"
 
       CHARACTER(LEN=1), INTENT(IN) :: CT 
       INTEGER(KIND=JWIM), INTENT(OUT) :: IGRIB_HANDLE
@@ -88,7 +87,7 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 
 
       INTEGER(KIND=JWIM) :: IC, JC, KST,JSN, KK, MM
-      INTEGER(KIND=JWIM) :: ICLASS,ICENTRE,IFS_STREAM
+      INTEGER(KIND=JWIM) :: ICLASS, ICENTRE, ISPEC2TAB
       INTEGER(KIND=JWIM) :: IREPR, IRESFLAGS
       INTEGER(KIND=JWIM) :: IGRIB_VERSION, IBITSPERVALUE
       INTEGER(KIND=JWIM) :: IDIRSCALING, IFRESCALING
@@ -109,11 +108,8 @@ SUBROUTINE PRESET_WGRIB_TEMPLATE(CT, IGRIB_HANDLE, NGRIBV, LLCREATE, NBITSPERVAL
 ! The following must NOT be changed from a 4 byte real
       REAL(KIND=4) :: REAL4
 
-      CHARACTER(LEN=2) :: MARSFCTYPE
-      CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=96) :: CLWORD
 
-      LOGICAL :: LASTREAM
       LOGICAL :: LLCRT 
 
 !-------------------------------------------------------------------
@@ -465,26 +461,6 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 
           ENDIF
 
-        ENDIF
-
-!       RESET STREAM IF NEEDED
-        CALL IGRIB_GET_VALUE(IGRIB_HANDLE_IFS,'stream',IFS_STREAM)
-        IF (.NOT.LNEWLVTP) THEN
-!         GET ISTREAM THAT CORRESPONDS TO IFS_STREAM
-          CALL WSTREAM_STRG(IFS_STREAM, CSTREAM, NENSFNB, NTOTENS,       &
-     &                      MARSFCTYPE, ISTREAM, LASTREAM) 
-          IF (CSTREAM == '****') THEN
-            WRITE(IU06,*) '*****************************************'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) ' ERROR IN PRESET_WGRIB_TEMPLATE !!!!'
-            WRITE(IU06,*) ' IFS STREAM UNKNOWN '
-            WRITE(IU06,*) ' INPUT ISTREAM = ', IFS_STREAM
-            WRITE(IU06,*) ' BUT NOT DEFINED IN WSTREAM_STRG !!!!'
-            WRITE(IU06,*) ''
-            WRITE(IU06,*) '*****************************************'
-            CALL ABORT1
-          ENDIF
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
         ENDIF
 
       ENDIF
