@@ -127,7 +127,7 @@ The bundle also facilitates setting environment variables and compiler flags rel
 The following options can also be configured during the bundle build step:
  - `--without-mpi` - Disable MPI
  - `--without-omp` - Disable OpenMP
- - `--single-precision` - Build single-precision variant of ecWAM
+ - `--with-single-precision` - Build single-precision variant of ecWAM
 
  Finally, additional `CMake` options can also be set during the bundle build step:
 
@@ -151,7 +151,7 @@ is present in the `<run-dir>`.
 1) Create bathymetry and grid tables
 
 ```shell
-ecwam-run-preproc --run-dir=<run-dir> --config=<path-to-config.yml>
+ecwam-run-preproc --run-dir=<run-dir> --prec=dp/sp --config=<path-to-config.yml>
 ```
 
 This command generates bathymetry data files as specified by configuration options.
@@ -172,7 +172,7 @@ Grid tables are always computed and never cached. THey are placed in the `<run-d
 2) Create initial conditions
 
 ```shell
-ecwam-run-preset --run-dir=<run-dir> --config=<path-to-config.yml>
+ecwam-run-preset --run-dir=<run-dir> --prec=dp/sp --config=<path-to-config.yml>
 ```
 
 As a result files, binary files of the form `<run-dir>/restart/BLS*` and `<run-dir>/restart/LAW*` are created.
@@ -187,7 +187,7 @@ forecast or from the ERA5 reanalysis data set. This is useful to generate new te
 3) Run wave model
 
 ```shell
-ecwam-run-model --run-dir=<run-dir> --config=<path-to-config.yml>
+ecwam-run-model --run-dir=<run-dir> --prec=dp/sp --config=<path-to-config.yml>
 ```
 
 With initial conditions, forcings, and grid tables in place we can run the actual wave model.
