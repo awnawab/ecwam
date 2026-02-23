@@ -107,3 +107,18 @@ options :
     - with-static-linking :
         help  : Build static libraries by default
         cmake : BUILD_SHARED_LIBS=OFF
+
+populate_options:
+    - python-arch :
+        help : System architecture to download Python wheels for
+        populate: >
+          FCKIT_WHEEL_ARCH={{value}}
+          LOKI_WHEEL_ARCH={{value}}
+          IFSBENCH_WHEEL_ARCH={{value}}
+
+    - python-version :
+        help : Python version for which to download wheels
+        populate: >
+          FCKIT_WHEEL_PYTHON_VERSION={{value}}
+          LOKI_WHEEL_PYTHON_VERSION={{value}}
+          IFSBENCH_WHEEL_PYTHON_VERSION={{value}}
