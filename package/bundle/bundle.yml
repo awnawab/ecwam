@@ -17,6 +17,11 @@ projects :
         version : master
         bundle  : false
 
+    - fcm :
+        git     : https://github.com/metomi/fcm
+        version : 2021.05.0
+        bundle  : false
+
     - eccodes :
         git     : https://github.com/ecmwf/eccodes
         version : 2.44.0
