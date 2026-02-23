@@ -47,6 +47,11 @@ projects :
             LOKI_ENABLE_TESTS=OFF
             LOKI_ENABLE_NO_INSTALL=ON
 
+    - ifsbench :
+        git     : https://github.com/ecmwf-ifs/ifsbench.git 
+        version : naan-populate
+        populate: IFSBENCH_INSTALL_OPTIONS=[tests]
+
     - ecwam :
         dir     : $PWD
         require : fiat 
