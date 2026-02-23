@@ -33,7 +33,7 @@ find_preproc_files
 find_preset_files ${begofrn}
 
 lgribin=F
-lgribout=F
+#lgribout=F
 lnocdin=T
 
 output_fields=$(read_config output.fields.name[:] --default="")
@@ -90,6 +90,8 @@ lciwa1=$(read_config lciwa1 --default=F)
 lciwa2=$(read_config lciwa2 --default=F)
 lciwa3=$(read_config lciwa3 --default=F)
 lciscal=$(read_config lciscal --default=F)
+lwamanout=$(read_config lwamanout --default=T)
+lgribout=$(read_config lgribout --default=F)
 
 # read timesteps
 phys_tstp=$(read_config physics.timestep --format=seconds --default=900)
@@ -265,6 +267,7 @@ cat > wam_namelist << EOF
   LCIWA2                = ${lciwa2},
   LCIWA3                = ${lciwa3},
   LCISCAL               = ${lciscal},
+  LWAMANOUT             = ${lwamanout},
   ${OUTPUT_FLAGS}
 /
 ${NAWI}
