@@ -584,10 +584,10 @@
 !     patial initialisation of the output table
       CALL MPCRTBL
       NFLAG(1)  = .TRUE. 
-      NFLAG(6)  = .TRUE. 
-      NFLAG(IRWDIR)= .TRUE. 
-      NFLAG(IRCD)  = .TRUE. 
-      NFLAG(IRU10) = .TRUE. 
+      !NFLAG(6)  = .TRUE. 
+      !NFLAG(IRWDIR)= .TRUE. 
+      !NFLAG(IRCD)  = .TRUE. 
+      !NFLAG(IRU10) = .TRUE. 
 
       XKMSS_CUTOFF = 0.0_JWRB
 
