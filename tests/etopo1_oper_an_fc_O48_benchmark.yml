@@ -1,0 +1,86 @@
+grid:        O48
+directions:  12 
+frequencies: 25
+bathymetry:  ETOPO1
+
+advection:
+    timestep: 900
+physics:
+    timestep: 900
+
+forecast.begin: 2023-01-01 00:00:00
+forecast.end:   2023-01-01 06:00:00
+
+begin: ${forecast.begin}
+end:   ${forecast.end}
+
+nproma: 32
+lwamanout: F
+lgribout: T
+irefra: 2
+llgcbz0: T
+llnormagam: T
+lciwa3: T
+lciscal: T
+
+forcings:
+    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O48.grib
+
+    at:
+      - begin:     ${forecast.begin}
+        end:       ${forecast.end}
+        timestep:  01:00 
+
+output:
+    fields:
+        name:
+          - swh         # Significant height of combined wind waves and swell
+        format: grib    # (default : grib) or binary
+        at:
+          - timestep: 01:00
+
+    restart:
+        format: binary # (default : binary) or grib
+        at:
+          - time: ${end}
+
+
+validation:
+
+  double_precision:
+
+    # 6h into forcast
+    - name: swh
+      time: 2023-01-01 06:00:00
+      average: 0.1458307880036211E+01
+      relative_tolerance: 1.e-14
+      hashes: ['0x3FF7553AA4C412EA']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      minimum: 0.1923947543946081E-01
+      relative_tolerance: 1.e-14
+      hashes: ['0x3F93B3835737FDE2']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      maximum: 0.5392698271141441E+01
+      relative_tolerance: 1.e-14
+      hashes: ['0x4015921F7EDEFE30']
+
+  single_precision:
+
+    # 6h into forcast
+    - name: swh
+      time: 2023-01-01 06:00:00
+      average: 0.1458318591117859E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF75545E0000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      minimum: 0.1923948153853416E-01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3F93B383C0000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      maximum: 0.5392696857452393E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x4015921F20000000']
