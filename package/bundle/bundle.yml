@@ -30,7 +30,7 @@ projects :
 
     - fckit :
         git     : https://github.com/ecmwf/fckit
-        version : 0.13.0
+        version : 0.14.1
         cmake   : ENABLE_FCKIT_VENV=ON
 
     - fiat :
