@@ -9,6 +9,7 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
           ENABLE_ACC=OFF 
           ENABLE_CUDA=OFF
           BUILD_fckit=OFF
+          ECBUILD_RECORD_GIT_COMMIT_SHA1=OFF
 
 projects :
 
