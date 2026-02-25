@@ -55,7 +55,7 @@ projects :
 
     - ifsbench :
         git     : https://github.com/ecmwf-ifs/ifsbench.git 
-        version : naan-populate
+        version : 3f5f1b332d0
         populate: IFSBENCH_INSTALL_OPTIONS=[tests]
 
     - ecwam :
