@@ -349,7 +349,7 @@
      &             RNU_ATM, RNUM_ATM,                                   &
      &             IDUM,IDUM, .FALSE.)
         time = (timestep_start+wam_user_clock())*1.e-6
-        IF(ISTEP > 0) time1 = (timestep_start+wam_user_clock())*1.e-6
+        IF(ISTEP > 0) time1 = (timestep1_start+wam_user_clock())*1.e-6
         ISTEP = ISTEP+1
         IF (IRANK==1) THEN
           CALL WAM_MEMINFO(6,ISTEP)
