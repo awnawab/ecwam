@@ -1,0 +1,70 @@
+grid:        O2560
+directions:  36
+frequencies: 29
+bathymetry:  ETOPO1
+
+advection:
+    timestep: 300
+    fast_waves:
+        timestep: 100
+        max_frequency: 9
+physics:
+    timestep: 600
+
+forecast.begin: 2023-01-01 00:00:00
+forecast.end:   2023-01-01 06:00:00
+
+begin: ${forecast.begin}
+end:   ${forecast.end}
+
+nproma: 24
+lwamanout: F
+lgribout: T
+irefra: 2
+llgcbz0: T
+llnormagam: T
+lciwa3: T
+lciscal: T
+
+forcings:
+    file:  data/forcings/oper_an_12h_fc_2023010100_36h_O2560.grib
+
+    at:
+      - begin:     ${forecast.begin}
+        end:       ${forecast.end}
+        timestep:  01:00
+
+output:
+    fields:
+        name:
+          - swh         # Significant height of combined wind waves and swell
+        format: grib    # (default : grib) or binary
+        at:
+          - timestep: 01:00
+
+    restart:
+        format: binary # (default : binary) or grib
+        at:
+          - time: ${end}
+
+
+validation:
+
+  single_precision:
+
+    # 6h into forcast
+    - name: swh
+      time: 2023-01-01 06:00:00
+      average: 0.1444122552871704E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x3FF71B2040000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      minimum: 0.1494375057518482E-01
+      relative_tolerance: 2.e-5
+      hashes: ['0x3F8E9AD440000000']
+    - name: swh
+      time: 2023-01-01 06:00:00
+      maximum: 0.5706314563751221E+01
+      relative_tolerance: 1.e-6
+      hashes: ['0x4016D34420000000']
