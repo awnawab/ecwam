@@ -32,6 +32,7 @@ def cli(log_dir, out_file, gpu):
     norms -= drhook_record.loc[drhook_record['routine'] == 'OUTWNORM'][metric].values[0]
     advection_loop = drhook_record.loc[drhook_record['routine'] == 'ADVECTION_LOOP'][metric].values[0]
     wamintgr = drhook_record.loc[drhook_record['routine'] == 'WAMINTGR'][metric].values[0]
+    propags2 = drhook_record.loc[drhook_record['routine'] == 'PROPAGS2'][metric].values[0]
 
     times = {
       'propag' : propag,
@@ -39,7 +40,8 @@ def cli(log_dir, out_file, gpu):
       'mpi' : mpi,
       'norms' : norms,
       'advection_loop': advection_loop,
-      'wamintgr': wamintgr
+      'wamintgr': wamintgr,
+      'propags2': propags2
     }
 
     if gpu:
