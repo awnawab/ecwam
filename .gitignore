@@ -7,8 +7,7 @@ doc/latex
 *.swp
 .nfs*
 build*
-run/*
-runs/*
+*run*/*
 slurm*
 install/*
 source/*
