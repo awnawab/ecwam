@@ -19,11 +19,12 @@ USE YOWDRVTYPE  , ONLY : WVGRIDGLO, WVGRIDLOC, FORCING_FIELDS
 USE YOWABORT , ONLY : WAM_ABORT
 USE YOWGRIBINFO, ONLY : WVGETGRIDINFO
 USE YOWGRID  , ONLY : NPROMA_WAM
-USE YOWMAP   , ONLY : NGX, NGY, IPER, IRGG, IQGAUSS,                        &
+USE YOWGRIBHD, ONLY : PPEPS, PPREC
+USE YOWMAP   , ONLY : NGX, NGY, IPER, IRGG, IQGAUSS, NIBLO,                 &
                    &  DAMOWEP, DAMOSOP, DAMOEAP, DAMONOP, DXDELLA, DXDELLO, &
                    &  NLONRGG
-USE YOWMPP   , ONLY : IRANK
-USE YOWPARAM , ONLY : NFRE_RED
+USE YOWMPP   , ONLY : IRANK, NPRECI
+USE YOWPARAM , ONLY : NFRE_RED, LLUNSTR
 USE YOWPCONS , ONLY : ZMISS
 USE YOWSTAT  , ONLY : IPROPAGS, LSUBGRID
 USE YOWSPEC  , ONLY : NSTART, NEND
@@ -32,18 +33,27 @@ USE YOWUBUF  , ONLY : OBSLAT, OBSLON, OBSCOR, OBSRLAT, OBSRLON,  &
                     & NPROPAGS, NANG_OBS, KTOIS, KTOOBSTRUCT
 USE YOWWIND  , ONLY : NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC
 
-USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE
+USE YOWGRIB  , ONLY : IGRIB_GET_VALUE, IGRIB_CLOSE_FILE, IGRIB_RELEASE,     &
+                    &  IGRIB_OPEN_FILE, IGRIB_READ_FROM_FILE,                &
+                    &  IGRIB_NEW_FROM_MESSAGE,                               &
+                    &  JPKSIZE_T, JPGRIB_BUFFER_TOO_SMALL,                   &
+                    &  JPGRIB_END_OF_FILE, JPGRIB_SUCCESS
 USE EC_LUN   , ONLY : NULERR
+USE MPL_MODULE, ONLY : MPL_BROADCAST
 USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+#ifdef WAM_HAVE_UNWAM
+USE YOWPD, ONLY : MNP => npa
+#endif
 
 !----------------------------------------------------------------------
 
 IMPLICIT NONE
 
 #include "init_fieldg.intfb.h"
-#include "inwgrib.intfb.h"
+#include "grib2wgrid.intfb.h"
 #include "ktoobs.intfb.h"
 #include "wvchkmid.intfb.h"
+#include "abort1.intfb.h"
 
 TYPE(WVGRIDGLO), INTENT(IN)       :: BLK2GLO       !! POINTERS FROM GLOBAL GRID POINTS TO 2-D MAP
 TYPE(WVGRIDLOC), INTENT(IN)       :: BLK2LOC       !! POINTERS FROM LOCAL GRID POINTS TO 2-D MAP
@@ -54,11 +64,17 @@ INTEGER(KIND=JWIM), INTENT(INOUT) :: KFILE_HANDLE  !! GRIB FILE HANDLE CONNECTED
 INTEGER(KIND=JWIM), INTENT(INOUT) :: KGRIB_HANDLE  !! GRIB HANDLE CONNECTED TO SUB GRIB BATHY INPUT
 
 INTEGER(KIND=JWIM) :: IJ, M, K, IS, IX, IY
-INTEGER(KIND=JWIM) :: IPARAM, KZLEV, IANGNB, IFRENB, IOBSRT, IFILE_HANDLE 
+INTEGER(KIND=JWIM) :: IPARAM, KZLEV, IANGNB, IFRENB, IOBSRT, IFILE_HANDLE
 INTEGER(KIND=JWIM) :: IRET, IERR, IEDITION
 INTEGER(KIND=JWIM) :: NGX_SUB, NGY_SUB, IPER_SUB, IRGG_SUB, IQGAUSS_SUB
 INTEGER(KIND=JWIM) :: JKGLO, KIJS, KIJL
+INTEGER(KIND=JWIM) :: IFORP, LFILE, ISIZE, KGRIB_HANDLE_LOC
 INTEGER(KIND=JWIM), ALLOCATABLE, DIMENSION(:) :: NLONRGG_SUB
+INTEGER(KIND=JWIM) :: NLONRGG_LOC(NGY)
+
+! BATCH BUFFER: NANG_OBS GRIB MESSAGES OF SIZE NIBLO EACH
+INTEGER(KIND=JWIM), ALLOCATABLE :: INGRIB_BATCH(:,:)
+INTEGER(KIND=JPKSIZE_T) :: KBYTES
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
@@ -72,7 +88,10 @@ TYPE(FORCING_FIELDS) :: FIELDG
 CHARACTER(LEN= 14) :: CDATE
 
 LOGICAL :: LLSCANNS_SUB, LLSAMEGRID
-LOGICAL :: LLINIALL, LLOCAL, LLFIX, LLCHK
+LOGICAL :: LLINIALL, LLOCAL
+
+! POINTER TO TARGET OBSTRUCTION ARRAY FOR SELECT CASE CONSOLIDATION
+REAL(KIND=JWRB), POINTER :: OBS_TARGET(:,:,:)
 
 !----------------------------------------------------------------------
 
@@ -109,7 +128,7 @@ IF ( LSUBGRID ) THEN
 
   CALL KTOOBS(IU06)
 
-  ! INWGRIB REQUIRES FIELDG
+  ! GRIB2WGRID REQUIRES FIELDG FOR BOUNDING-BOX COMPUTATION
   CALL FIELDG%ALLOC(LBOUNDS=[NXFFS_LOC, NYFFS_LOC], UBOUNDS=[NXFFE_LOC, NYFFE_LOC])
 
   LLINIALL=.FALSE.
@@ -177,24 +196,90 @@ IF ( LSUBGRID ) THEN
 
 
   ALLOCATE(FIELD(NXFFS_LOC:NXFFE_LOC, NYFFS_LOC:NYFFE_LOC))
+
+  ! SET UP NLONRGG_LOC FOR GRIB2WGRID
+  IF (LLUNSTR) THEN
+#ifdef WAM_HAVE_UNWAM
+    NLONRGG_LOC(:) = MNP
+#else
+    CALL WAM_ABORT("UNWAM support not available",__FILENAME__,__LINE__)
+#endif
+  ELSE
+    NLONRGG_LOC(:) = NLONRGG(:)
+  ENDIF
+
+  ! OPEN THE GRIB FILE ON PE IREAD
   IFILE_HANDLE = -99
+  IF (IRANK == IREAD) THEN
+    LFILE = LEN_TRIM(FILNM)
+    CALL IGRIB_OPEN_FILE(IFILE_HANDLE, FILNM(1:LFILE), 'r')
+    WRITE(IU06,*) ' SUB. GETGRBOBSTRCT - READ FROM ', FILNM(1:LFILE)
+  ENDIF
 
-  LLFIX = .TRUE.
+  ISIZE = NIBLO
 
-  LLCHK = .FALSE. !! the subgrid data are on the same grid as the model (see check above)
+  ! ALLOCATE BATCH BUFFER: NANG_OBS GRIB MESSAGES PER FREQUENCY
+  ALLOCATE(INGRIB_BATCH(ISIZE, NANG_OBS))
 
   DO M = 1, NFRE_RED ! loop over frequencies
 
+    ! ---- BATCH READ: PE IREAD READS NANG_OBS GRIB MESSAGES ----
+    IF (IRANK == IREAD) THEN
+      DO K = 1, NANG_OBS
+        KBYTES = ISIZE * NPRECI
+        CALL IGRIB_READ_FROM_FILE(IFILE_HANDLE, INGRIB_BATCH(:,K), KBYTES, IRET)
+
+        IF (IRET == JPGRIB_BUFFER_TOO_SMALL) THEN
+          WRITE(IU06,*) '****************************************************'
+          WRITE(IU06,*) '* GETGRBOBSTRCT: BUFFER TOO SMALL'
+          WRITE(IU06,*) '* FREQUENCY M=', M, ' ANGLE K=', K
+          WRITE(NULERR,*) '* GETGRBOBSTRCT: BUFFER TOO SMALL'
+          WRITE(IU06,*) '****************************************************'
+          CALL ABORT1
+        ELSEIF (IRET == JPGRIB_END_OF_FILE) THEN
+          WRITE(IU06,*) '**********************************'
+          WRITE(IU06,*) '* GETGRBOBSTRCT: END OF FILE ENCOUNTERED'
+          WRITE(IU06,*) '* FREQUENCY M=', M, ' ANGLE K=', K
+          WRITE(NULERR,*) '* GETGRBOBSTRCT: END OF FILE ENCOUNTERED'
+          WRITE(IU06,*) '**********************************'
+          CALL ABORT1
+        ELSEIF (IRET /= JPGRIB_SUCCESS) THEN
+          WRITE(IU06,*) '**********************************'
+          WRITE(IU06,*) '* GETGRBOBSTRCT: FILE HANDLING ERROR'
+          WRITE(IU06,*) '* FREQUENCY M=', M, ' ANGLE K=', K
+          WRITE(NULERR,*) '* GETGRBOBSTRCT: FILE HANDLING ERROR'
+          WRITE(IU06,*) '**********************************'
+          CALL ABORT1
+        ENDIF
+      ENDDO
+    ENDIF
+
+    ! ---- SINGLE BROADCAST OF ALL NANG_OBS MESSAGES FOR THIS FREQUENCY ----
+    IF (NPR > 1) THEN
+      CALL GSTATS(619,0)
+      CALL MPL_BROADCAST(INGRIB_BATCH(:,:), KROOT=IREAD, KTAG=2, &
+ &                       CDSTRING='GETGRBOBSTRCT: BATCH')
+      CALL GSTATS(619,1)
+    ENDIF
+
+    ! ---- DECODE AND ASSIGN EACH MESSAGE ----
     DO K = 1, NANG_OBS
 
-      ! Get grib data (read, distribute and decode):
-      CALL INWGRIB (FILNM, IREAD, CDATE, IPARAM, KZLEV,                          &
- &                  NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC, FIELDG, FIELD,   &
- &                  LLCHKINT=LLCHK, LLFIXEDSIZE=LLFIX, NPR=NPR,                  &
- &                  KANGNB=IANGNB, KFRENB=IFRENB, NFILE_HANDLE=IFILE_HANDLE)
+      KGRIB_HANDLE_LOC = -99
+      CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE_LOC, INGRIB_BATCH(:,K))
 
+      CALL GRIB2WGRID(IU06, NPROMA_WAM,                                   &
+ &                    KGRIB_HANDLE_LOC, INGRIB_BATCH(:,K), ISIZE,         &
+ &                    LLUNSTR, .FALSE.,                                    &
+ &                    NGY, IRGG, NLONRGG_LOC,                              &
+ &                    NXFFS_LOC, NXFFE_LOC, NYFFS_LOC, NYFFE_LOC,         &
+ &                    FIELDG%XLON, FIELDG%YLAT,                            &
+ &                    ZMISS, PPREC, PPEPS,                                 &
+ &                    CDATE, IFORP, IPARAM, KZLEV, IANGNB, IFRENB, FIELD)
 
-      IF ( IANGNB /= K .OR. IFRENB /= M ) THEN
+      CALL IGRIB_RELEASE(KGRIB_HANDLE_LOC)
+
+      IF (IANGNB /= K .OR. IFRENB /= M) THEN
         WRITE(IU06,*) "GETGRBOBSTRCT : "
         WRITE(IU06,*) "INPUT OBSTRUCTIONS NOT IN THE EXPECTED ORDER !"
         WRITE(IU06,*) "IANGNB, K = ", IANGNB, K
@@ -205,114 +290,53 @@ IF ( LSUBGRID ) THEN
 
 
       IS = KTOIS(K,IPROPAGS)
-      IF ( IS > 0 ) THEN
+      IF (IS > 0) THEN
         IOBSRT = KTOOBSTRUCT(K,IPROPAGS)
+
+        ! SELECT TARGET ARRAY VIA POINTER TO AVOID DUPLICATED LOOPS
+        NULLIFY(OBS_TARGET)
         SELECT CASE(IOBSRT)
-
         CASE(1)
-          CALL GSTATS(1498,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
-          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
-            DO IJ = KIJS, KIJL
-              IX = BLK2GLO%IXLG(IJ)
-              IY = NGY- BLK2GLO%KXLT(IJ) +1
-              IF (FIELD(IX,IY) /= ZMISS) THEN
-                OBSLAT(IJ,M,IS) = FIELD(IX,IY)
-              ELSE
-                OBSLAT(IJ,M,IS) = 1.0_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1498,1)
-
+          OBS_TARGET => OBSLAT
         CASE(2)
-          CALL GSTATS(1498,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
-          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
-            DO IJ = KIJS, KIJL
-              IX = BLK2GLO%IXLG(IJ)
-              IY = NGY- BLK2GLO%KXLT(IJ) +1
-              IF (FIELD(IX,IY) /= ZMISS) THEN
-                OBSLON(IJ,M,IS) = FIELD(IX,IY)
-              ELSE
-                OBSLON(IJ,M,IS) = 1.0_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1498,1)
-
+          OBS_TARGET => OBSLON
         CASE(3)
-          CALL GSTATS(1498,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
-          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
-            DO IJ = KIJS, KIJL
-              IX = BLK2GLO%IXLG(IJ)
-              IY = NGY- BLK2GLO%KXLT(IJ) +1
-              IF (FIELD(IX,IY) /= ZMISS) THEN
-                OBSRLAT(IJ,M,IS) = FIELD(IX,IY)
-              ELSE
-                OBSRLAT(IJ,M,IS) = 1.0_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1498,1)
-
+          OBS_TARGET => OBSRLAT
         CASE(4)
-          CALL GSTATS(1498,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
-          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
-            DO IJ = KIJS, KIJL
-              IX = BLK2GLO%IXLG(IJ)
-              IY = NGY- BLK2GLO%KXLT(IJ) +1
-              IF (FIELD(IX,IY) /= ZMISS) THEN
-                OBSRLON(IJ,M,IS) = FIELD(IX,IY)
-              ELSE
-                OBSRLON(IJ,M,IS) = 1.0_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1498,1)
-
+          OBS_TARGET => OBSRLON
         CASE(5)
-          CALL GSTATS(1498,0)
-!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
-          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
-            KIJS=JKGLO
-            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
-            DO IJ = KIJS, KIJL
-              IX = BLK2GLO%IXLG(IJ)
-              IY = NGY- BLK2GLO%KXLT(IJ) +1
-              IF (FIELD(IX,IY) /= ZMISS) THEN
-                OBSCOR(IJ,M,IS) = FIELD(IX,IY)
-              ELSE
-                OBSCOR(IJ,M,IS) = 1.0_JWRB
-              ENDIF
-            ENDDO
-          ENDDO
-!$OMP     END PARALLEL DO
-          CALL GSTATS(1498,1)
-
+          OBS_TARGET => OBSCOR
         END SELECT
 
-      ENDIF ! end loop on NANG_OBS
+        IF (ASSOCIATED(OBS_TARGET)) THEN
+          CALL GSTATS(1498,0)
+!$OMP     PARALLEL DO SCHEDULE(STATIC) PRIVATE(JKGLO, KIJS, KIJL, IJ, IX, IY)
+          DO JKGLO = NSTART(IRANK), NEND(IRANK), NPROMA_WAM
+            KIJS=JKGLO
+            KIJL=MIN(KIJS+NPROMA_WAM-1, NEND(IRANK))
+            DO IJ = KIJS, KIJL
+              IX = BLK2GLO%IXLG(IJ)
+              IY = NGY - BLK2GLO%KXLT(IJ) + 1
+              IF (FIELD(IX,IY) /= ZMISS) THEN
+                OBS_TARGET(IJ,M,IS) = FIELD(IX,IY)
+              ELSE
+                OBS_TARGET(IJ,M,IS) = 1.0_JWRB
+              ENDIF
+            ENDDO
+          ENDDO
+!$OMP     END PARALLEL DO
+          CALL GSTATS(1498,1)
+        ENDIF
 
-    ENDDO
-  ENDDO ! end loop over frequencies
+      ENDIF
 
+    ENDDO ! K loop (decode)
+  ENDDO ! M loop (frequencies)
+
+  NULLIFY(OBS_TARGET)
+  DEALLOCATE(INGRIB_BATCH)
   DEALLOCATE(FIELD)
-  IF( IFILE_HANDLE > 0 ) CALL IGRIB_CLOSE_FILE(IFILE_HANDLE)
+  IF (IRANK == IREAD .AND. IFILE_HANDLE > 0) CALL IGRIB_CLOSE_FILE(IFILE_HANDLE)
 
   CALL FIELDG%DEALLOC()
 

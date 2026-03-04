@@ -79,7 +79,7 @@
 
       USE YOMHOOK   , ONLY : LHOOK,   DR_HOOK, JPHOOK
       USE EC_LUN   ,  ONLY : NULERR
-      USE MPL_MODULE, ONLY : MPL_BARRIER, MPL_BROADCAST
+      USE MPL_MODULE, ONLY : MPL_BROADCAST
       USE YOWGRIB, ONLY    : IGRIB_OPEN_FILE, IGRIB_CLOSE_FILE, IGRIB_RELEASE, &
                            & IGRIB_NEW_FROM_MESSAGE, IGRIB_READ_FROM_FILE, &
                            & JPKSIZE_T, JPGRIB_BUFFER_TOO_SMALL, &
@@ -111,6 +111,7 @@
 
 
       INTEGER(KIND=JWIM), SAVE :: NBIT
+      INTEGER(KIND=JWIM), ALLOCATABLE, SAVE :: INGRIB_PERSIST(:)
 
       INTEGER(KIND=JWIM) :: NPRC 
       INTEGER(KIND=JWIM) :: IFORP
@@ -127,6 +128,7 @@
 
       LOGICAL :: LLEXIST
       LOGICAL :: LLOPENFILE, LLHANDEL, LLFIX, LLCHK
+      LOGICAL :: LLPERSIST
 
 ! ----------------------------------------------------------------------
 
@@ -162,6 +164,10 @@
       ELSE
         NPRC = NPROC
       ENDIF
+
+!     USE PERSISTENT BUFFER WHEN FIXED SIZE AND PERSISTENT FILE HANDLE
+!     TO AVOID REPEATED ALLOCATION/DEALLOCATION IN TIGHT LOOPS
+      LLPERSIST = LLFIX .AND. LLHANDEL
 
       NBIT=NIBLO
       ISIZE=NBIT
@@ -208,10 +214,15 @@
           IF( LLHANDEL ) KFILE_HANDLE = NFILE_HANDLE
         ENDIF
 
-1021    ISIZE=NBIT
+ 1021    ISIZE=NBIT
         KBYTES=ISIZE*NPRECI
-        IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
+        IF (LLPERSIST) THEN
+          IF (.NOT.ALLOCATED(INGRIB_PERSIST)) ALLOCATE(INGRIB_PERSIST(ISIZE))
+          CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB_PERSIST,KBYTES,IRET)
+        ELSE
+          IF (.NOT.ALLOCATED(INGRIB)) ALLOCATE(INGRIB(ISIZE))
           CALL IGRIB_READ_FROM_FILE(KFILE_HANDLE,INGRIB,KBYTES,IRET)
+        ENDIF
 
         IF ( IRET == JPGRIB_BUFFER_TOO_SMALL .AND. LLFIX ) THEN
           WRITE(IU06,*) '****************************************************'
@@ -268,34 +279,56 @@
           ENDIF
         ENDIF
 
-        IF (IRANK /= IREAD) ALLOCATE(INGRIB(ISIZE))
-        CALL MPL_BROADCAST(INGRIB(1:ISIZE), KROOT=IREAD, KTAG=2, CDSTRING='INWGRIB: INGRIB')
+        IF (LLPERSIST) THEN
+          IF (IRANK /= IREAD) THEN
+            IF (.NOT.ALLOCATED(INGRIB_PERSIST)) ALLOCATE(INGRIB_PERSIST(ISIZE))
+          ENDIF
+          CALL MPL_BROADCAST(INGRIB_PERSIST(1:ISIZE), KROOT=IREAD, KTAG=2, CDSTRING='INWGRIB: INGRIB')
+        ELSE
+          IF (IRANK /= IREAD) ALLOCATE(INGRIB(ISIZE))
+          CALL MPL_BROADCAST(INGRIB(1:ISIZE), KROOT=IREAD, KTAG=2, CDSTRING='INWGRIB: INGRIB')
+        ENDIF
         CALL GSTATS(619,1)
       ENDIF
-
-      CALL MPL_BARRIER(CDSTRING='INWGRIB: DATA INPUT IN')
 
 !     DECODE THE GRIB DATA
 !     (and interpolate to model grid if necessary)
 
       KGRIB_HANDLE=-99
-      CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
+      IF (LLPERSIST) THEN
+        CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB_PERSIST)
 
-      CALL GRIB2WGRID (IU06, NPROMA_WAM,                                &
-     &                 KGRIB_HANDLE, INGRIB, ISIZE,                     &
-     &                 LLUNSTR, LLCHK,                                  &
-     &                 NGY, IRGG, NLONRGG_LOC,                          &
-     &                 NXS, NXE, NYS, NYE,                              &
-     &                 FIELDG%XLON, FIELDG%YLAT,                        &
-     &                 ZMISS, PPREC, PPEPS,                             &
-     &                 CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+        CALL GRIB2WGRID (IU06, NPROMA_WAM,                                &
+     &                   KGRIB_HANDLE, INGRIB_PERSIST, ISIZE,             &
+     &                   LLUNSTR, LLCHK,                                  &
+     &                   NGY, IRGG, NLONRGG_LOC,                          &
+     &                   NXS, NXE, NYS, NYE,                              &
+     &                   FIELDG%XLON, FIELDG%YLAT,                        &
+     &                   ZMISS, PPREC, PPEPS,                             &
+     &                   CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+      ELSE
+        CALL IGRIB_NEW_FROM_MESSAGE(KGRIB_HANDLE,INGRIB)
+
+        CALL GRIB2WGRID (IU06, NPROMA_WAM,                                &
+     &                   KGRIB_HANDLE, INGRIB, ISIZE,                     &
+     &                   LLUNSTR, LLCHK,                                  &
+     &                   NGY, IRGG, NLONRGG_LOC,                          &
+     &                   NXS, NXE, NYS, NYE,                              &
+     &                   FIELDG%XLON, FIELDG%YLAT,                        &
+     &                   ZMISS, PPREC, PPEPS,                             &
+     &                   CDATE, IFORP, IPARAM, KZLEV, KK, MM, FIELD)
+      ENDIF
 
       IF( PRESENT(KANGNB) ) KANGNB = KK 
       IF( PRESENT(KFRENB) ) KFRENB = MM 
 
       CALL IGRIB_RELEASE(KGRIB_HANDLE)
 
-      IF (ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+!     ONLY DEALLOCATE NON-PERSISTENT BUFFERS
+!     PERSISTENT BUFFER IS REUSED ACROSS CALLS AND CLEANED UP EXTERNALLY
+      IF (.NOT.LLPERSIST) THEN
+        IF (ALLOCATED(INGRIB)) DEALLOCATE(INGRIB)
+      ENDIF
 
       IF (LHOOK) CALL DR_HOOK('INWGRIB',1,ZHOOK_HANDLE)
 
