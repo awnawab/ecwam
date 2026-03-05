@@ -26,7 +26,9 @@ projects :
     - eccodes :
         git     : https://github.com/ecmwf/eccodes
         version : 2.44.0
-        cmake   : ENABLE_MEMFS=ON
+        cmake   : >
+           ENABLE_MEMFS=ON
+           ENABLE_ECCODES_OMP_THREADS=ON
 
     - fckit :
         git     : https://github.com/ecmwf/fckit
