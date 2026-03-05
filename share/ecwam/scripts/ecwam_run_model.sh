@@ -237,7 +237,7 @@ cat > wam_namelist << EOF
   LLGCBZ0               = ${llgcbz0},
   LLNORMAGAM            = ${llnormagam},
   IPROPAGS              = 2,
-  LSUBGRID              = F,
+  LSUBGRID              = T,
   IREFRA                = ${irefra},
   LICERUN               = ${licerun},
   LMASKICE              = T,

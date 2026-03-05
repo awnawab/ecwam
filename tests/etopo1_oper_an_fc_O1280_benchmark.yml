@@ -55,14 +55,14 @@ validation:
     # 6h into forcast
     - name: swh
       time: 2023-01-01 06:00:00
-      average: 0.1420697689056396E+01
+      average: 0.1416027545928955E+01
       relative_tolerance: 1.e-6
-      hashes: ['0x3FF6BB2D80000000']
+      hashes: ['0x3FF6A80C80000000']
     - name: swh
       time: 2023-01-01 06:00:00
-      minimum: 0.1483264565467834E-01
+      minimum: 0.1482279971241951E-01
       relative_tolerance: 2.e-5
-      hashes: ['0x3F8E609400000000']
+      hashes: ['0x3F8E5B6A80000000']
     - name: swh
       time: 2023-01-01 06:00:00
       maximum: 0.5755354881286621E+01
