@@ -82,6 +82,8 @@
 
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB),DIMENSION(IJINF:IJSUP,KINF:KSUP,MINF:MSUP) :: FL_G
+      LOGICAL :: LSTREAM
+      REAL(KIND=JWRB), ALLOCATABLE :: FL_TEMP(:,:,:)
 
       LOGICAL :: LLEXIST
 
@@ -91,6 +93,9 @@
 
       LFILE=0
       IF (FILENAME /= ' ') LFILE=LEN_TRIM(FILENAME)
+
+      LSTREAM = .NOT. LRSTPARAL
+      IF (LSTREAM) ALLOCATE(FL_TEMP, MOLD=FL)
 
       IF (LOUNIT) THEN
         LLEXIST=.FALSE.
@@ -112,7 +117,7 @@
           WRITE (*,*) '*************************************'
           CALL ABORT1
         ENDIF
-        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0,'READWRITE')
+        IUNIT=IWAM_GET_UNIT(IU06, FILENAME(1:LFILE), 'r', 'u',0,'READWRITE', LSTREAM=LSTREAM)
       ENDIF
 
       IF (LLUNSTR .AND. .NOT.LRSTPARAL) THEN
@@ -136,10 +141,16 @@
       ELSE
 !       WHEN 2-D DECOMPOSITION IS USED THEN THE INDEXES IJ ARE RE-LABELLED
 !       BUT THE BINARY INPUT FILES ARE IN THE OLD MAPPING
-        READ(IUNIT) (((FL(IJ2NEWIJ(IJ),J2,J3),                          &
-     &                  IJ=IJINF,IJSUP),                                &
-     &                  J2=KINF,KSUP),                                  &
-     &                  J3=MINF,MSUP)
+        READ(IUNIT) FL_TEMP(IJINF:IJSUP,KINF:KSUP,MINF:MSUP)
+        DO J3 = MINF,MSUP
+          DO J2 = KINF,KSUP
+            DO IJ = IJINF,IJSUP
+              FL(IJ2NEWIJ(IJ),J2,J3) = FL_TEMP(IJ,J2,J3)
+            ENDDO
+          ENDDO
+        ENDDO
+
+        DEALLOCATE(FL_TEMP)
 
       ENDIF
       IF (LCUNIT) CLOSE(IUNIT)
