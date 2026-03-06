@@ -126,6 +126,7 @@
 #include "wvwaminit1.intfb.h"
 #include "ec_meminfo.intfb.h"
 #include "wam_user_clock.intfb.h"
+#include "difdate.intfb.h"
 
 
 ! DIMENSION DUMMY COUPLED VARIABLES
@@ -149,6 +150,7 @@
       INTEGER(KIND=JWIM) :: KERROR
       INTEGER(KIND=JWIM) :: MASK_IN(NGPTOTG)
       INTEGER(KIND=JWIM) :: MASK_OUT(NLONW,NLATW)
+      INTEGER(KIND=JWIM) :: ISEC
 
       REAL(KIND=JWRB) :: PSTEP
       REAL(KIND=JWRB) :: RSOUTW, RNORTW
@@ -409,6 +411,9 @@
       WRITE (IU06,'(A)') ' +                            +'
       WRITE (IU06,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
       WRITE (IU06,'(A)') ' ++++++++++++++++++++++++++++++'
+      CALL DIFDATE(CBPLTDT,CDATEE,ISEC)
+      WRITE (IU06,'(A)') ' + STREAMING PERF [CYCLES/s]     +'
+      WRITE (IU06,'(A,F18.2,A)') ' + ', (ISEC/IDELPRO)/time1, '         +'
       IF (IRANK==1 .AND. IU06/=6) THEN
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
         WRITE (6,'(A)') ' + TOTAL USER TIME IN SECONDS +'
@@ -422,6 +427,9 @@
         WRITE (6,'(A)') ' +                            +'
         WRITE (6,'(A,I8,A)') ' + ON PE : ', IRANK, '           +'
         WRITE (6,'(A)') ' ++++++++++++++++++++++++++++++'
+        CALL DIFDATE(CBPLTDT,CDATEE,ISEC)
+        WRITE (6,'(A)') ' + STREAMING PERF [CYCLES/s]  +'
+        WRITE (6,'(A,F18.2,A)') ' + ', (ISEC/IDELPRO)/time1, '         +'
       ENDIF
 
       CALL MPCLOSE_UNIT
