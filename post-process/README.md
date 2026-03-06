@@ -11,6 +11,7 @@ The following times are extracted:
 - advection_loop - Total time minus setup and teardown, `ADVECTION_LOOP` markers in `WAMODEL`.
 - offload - Total time spent in CPU<->GPU data-transfers.
 - propags2 - The most computationally expensive part of the wave propagation kernel
+- time1 - Total application time minus timestep 1
 
 
 Timings, averaged across all MPI ranks, can be extracted using the provided `extract_ecwam_drhook.py` CLI script, which requires
