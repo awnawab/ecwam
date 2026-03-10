@@ -456,8 +456,8 @@ foreach( prec sp dp )
                          ${${PNAME}_OCEANMODEL_LIBRARIES}
                          field_api_${prec}
                          $<${HAVE_HIPFORT}:hipfort::hip>
-        PRIVATE_LIBS     eccodes_f90
-                         ${MULTIO_LIBRARIES}
+                         eccodes_f90
+        PRIVATE_LIBS     ${MULTIO_LIBRARIES}
                          ${OpenMP_Fortran_LIBRARIES}
                          $<${HAVE_ECFLOW}:ecflow_lightf>
                          $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
