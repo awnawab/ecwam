@@ -15,7 +15,7 @@ projects :
 
     - ecbuild : 
         git     : https://github.com/ecmwf/ecbuild
-        version : master
+        version : 3.13.1
         bundle  : false
 
     - fcm :
