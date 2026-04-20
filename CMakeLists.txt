@@ -55,8 +55,12 @@ set( HAVE_sp ${HAVE_SINGLE_PRECISION} )
 
 ecbuild_add_option( FEATURE OCEAN_COUPLING
                     DEFAULT ON
-                    DESCRIPTION "Support ocean coupling"
-                    REQUIRED_PACKAGES "nemo" )
+                    DESCRIPTION "Support ocean coupling")
+### Determine ocean model precision
+if( HAVE_OCEAN_COUPLING )
+  include( ecwam_find_nemo )
+endif()
+
 
 ecbuild_add_option( FEATURE ECWAM_LAUNCH
                     DEFAULT ON
