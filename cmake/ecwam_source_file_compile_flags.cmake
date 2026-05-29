@@ -35,11 +35,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHE
      set_source_files_properties( transf_bfi.F90 PROPERTIES OVERRIDE_COMPILE_FLAGS " -g -O1 -Mflushz -Mno-signed-zeros " )
   endif()
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" AND CMAKE_BUILD_TYPE MATCHES "Debug")
-  if( DEFINED ${PNAME}_Fortran_FLAGS_DEBUG )
-    string(REPLACE "-Ktrap=fp" "" ${PNAME}_Fortran_FLAGS_DEBUG ${${PNAME}_Fortran_FLAGS_DEBUG})
-  endif()
-  set_source_files_properties( outbeta.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=divz")
-  set_source_files_properties( secondhh.F90 PROPERTIES COMPILE_OPTIONS "${${PNAME}_Fortran_FLAGS_DEBUG} -Ktrap=inv,ovf")
+  set( _ecwam_debug_flags_no_fptrap "${${PNAME}_Fortran_FLAGS_DEBUG}" )
+  string(REPLACE "-Ktrap=fp" "" _ecwam_debug_flags_no_fptrap "${_ecwam_debug_flags_no_fptrap}")
+  set_source_files_properties( outbeta.F90 PROPERTIES OVERRIDE_COMPILE_FLAGS "${_ecwam_debug_flags_no_fptrap} -Ktrap=divz")
+  set_source_files_properties( secondhh.F90 PROPERTIES OVERRIDE_COMPILE_FLAGS "${_ecwam_debug_flags_no_fptrap} -Ktrap=inv,ovf")
 endif()
 
 ### The file grib2wgrid.F90 is sensitive to optimizations in single precision builds.
