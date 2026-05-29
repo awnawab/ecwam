@@ -13,8 +13,8 @@ cmake   : CMAKE_LINK_DEPENDS_NO_SHARED=ON
 projects :
 
     - ecbuild : 
-        git     : https://github.com/ecmwf/ecbuild
-        version : 3.14.2
+        git     : https://github.com/awnawab/ecbuild
+        version : feature/project_flags
         bundle  : false
 
     - eccodes :
