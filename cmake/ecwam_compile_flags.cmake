@@ -58,6 +58,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Flang")
   set(autopromote_flags   "-fdefault-real-8")
   set(fpe_flags           "-ffp-exception-behavior=strict")
+  set(optimization_flags  "-O2")
 
 endif()
 
