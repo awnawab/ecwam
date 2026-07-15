@@ -142,6 +142,11 @@ jobs:
           sudo apt-get install ninja-build
         fi
 
+        if [[ "${{ matrix.compiler }}" =~ flang ]]; then
+          export OMP_STACKSIZE=64M
+          echo "OMP_STACKSIZE=64M" >> $GITHUB_ENV
+        fi
+
         pip3 install numpy
 
 
