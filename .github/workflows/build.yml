@@ -144,6 +144,8 @@ jobs:
         if [[ "${{ matrix.compiler }}" =~ flang ]]; then
           export OMP_STACKSIZE=64M
           echo "OMP_STACKSIZE=64M" >> $GITHUB_ENV
+          echo "ulimit -s unlimited" > "${RUNNER_TEMP}/ecwam-flang-bash-env"
+          echo "BASH_ENV=${RUNNER_TEMP}/ecwam-flang-bash-env" >> $GITHUB_ENV
         fi
 
         pip3 install numpy
