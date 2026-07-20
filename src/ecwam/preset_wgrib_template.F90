@@ -213,7 +213,12 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
 !     DEFINE YOUR OWN LOCAL HEADER
 !     -----------------------------
       IF (.NOT. LGRHDIFS .OR. LLCRT) THEN
-        ! LOCAL MARS TABLE USED.
+
+        IF ( IGRIB_VERSION == 2 ) THEN
+          ! Use latest tables version for the GRIB-2 samples
+          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
+        ENDIF
 
         IF (CT == "S") THEN
           IF ( IGRIB_VERSION == 1 ) THEN
@@ -222,9 +227,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
             ! not used in uncoupled mode.
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',3)
           ELSEIF ( IGRIB_VERSION == 2 ) THEN
-            ! Use latest tables version for the GRIB-2 samples
-            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'tablesVersionLatest', ISPEC2TAB)
-            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'tablesVersion', ISPEC2TAB)
+            ! LOCAL MARS TABLE USED.
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setLocalDefinition', 1)
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localDefinitionNumber', 1)
             IF ( NTOTENS > 0 ) THEN
@@ -242,7 +245,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET_WGRIB_TEMPLATE',0,ZHOOK_HANDLE)
         ! CLASS
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'class',YCLASS)
         ! TYPE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',2)
+        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',MARSTYPE)
         ! STREAM
         IF (ISTREAM > 0) THEN
           CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'stream',ISTREAM)
