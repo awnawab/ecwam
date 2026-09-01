@@ -376,38 +376,40 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
 
         CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'type',ITYPE)
 
-        SELECT CASE(MARSTYPE)
-        CASE ('an')
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',0) ! Analysis
-        CASE ('4v','4i','me')
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',6) ! Start of data assimilation
-          ! Here we cheat, as the anoffset of the IFS template is the 4Dvar window lenght
-          CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF,IRET)
-          IF (IRET==0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'lengthOf4DvarWindow',NWINOFF)
-        CASE ('fc')
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','fc')      ! Forecast products
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',2)     ! Forecast
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
-        CASE ('cf')
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','cf')      ! Control forecast products
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
-        CASE ('pf')
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','pf')      ! Perturbed forecast products
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
-        CASE('sg','sf','fg')
-        CASE DEFAULT
-          WRITE(NULERR,*) '   SUB. WGRIBENCODE: UNKNOWN MARS TYPE: '//MARSTYPE
-          WRITE(NULERR,*)'  '
-          WRITE(NULERR,*)' CALL ABORT1 '
-          WRITE(NULERR,*)'  '
-          CALL ABORT1
-        END SELECT
+        IF ( IGRIB_VERSION == 2 ) THEN
+          SELECT CASE(MARSTYPE)
+          CASE ('an')
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',0) ! Analysis
+          CASE ('4v','4i','me')
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','an')      ! Analysis products
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',0)     ! Analysis
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',6) ! Start of data assimilation
+            ! Here we cheat, as the anoffset of the IFS template is the 4Dvar window lenght
+            CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',NWINOFF,IRET)
+            IF (IRET==0) CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'lengthOf4DvarWindow',NWINOFF)
+          CASE ('fc')
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','fc')      ! Forecast products
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',2)     ! Forecast
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+          CASE ('cf')
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','cf')      ! Control forecast products
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+          CASE ('pf')
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfProcessedData','pf')      ! Perturbed forecast products
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfGeneratingProcess',4)     ! Ensemble Forecast
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'significanceOfReferenceTime',1) ! Forecast
+          CASE('sg','sf','fg')
+          CASE DEFAULT
+            WRITE(NULERR,*) '   SUB. WGRIBENCODE: UNKNOWN MARS TYPE: '//MARSTYPE
+            WRITE(NULERR,*)'  '
+            WRITE(NULERR,*)' CALL ABORT1 '
+            WRITE(NULERR,*)'  '
+            CALL ABORT1
+          END SELECT
+        ENDIF
 
         IF (ITYPE /= 9 .AND. ITYPE /= 10 .AND. ITYPE /= 11 &
            .AND. ITYPE /= 6 .AND. IFCST > 0) THEN
