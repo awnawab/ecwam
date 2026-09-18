@@ -139,6 +139,8 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       INTEGER(KIND=JWIM) :: NPROMA, MTHREADS, JC, JCS, JCL, JJ, ITHRS
 
 
+      REAL(KIND=JWRB) :: TEMP
+      REAL(KIND=JWRB) :: ZMINSPEC, PPMAX, PPMIN, DELTAPP, ABSPPREC
       REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
       REAL(KIND=JWRB), ALLOCATABLE :: VALUES(:)
       REAL(KIND=JWRB), ALLOCATABLE :: VALM(:)
@@ -208,27 +210,26 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
           ELSE
             CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
           ENDIF
-        ELSE
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'productDefinitionTemplateNumber', NTRG2TMPD)
-        ENDIF
 
-        IF ( ITMIN /= 0 .AND. ITMAX /= 0 ) THEN
-!         [ ITMIN , ITMAX ]
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 7)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
-        ELSEIF ( ITMIN /= 0 ) THEN
-!         [ ITMIN
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
-        ELSEIF ( ITMAX /= 0 ) THEN
-!         ITMAX ]
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 4)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
-          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
+          IF ( ITMIN /= 0 .AND. ITMAX /= 0 ) THEN
+!           [ ITMIN , ITMAX ]
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 7)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
+          ELSEIF ( ITMIN /= 0 ) THEN
+!           [ ITMIN
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 3)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfLowerWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfLowerWavePeriodLimit', ITMIN)
+          ELSEIF ( ITMAX /= 0 ) THEN
+!           ITMAX ]
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'typeOfWavePeriodInterval', 4)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaleFactorOfUpperWavePeriodLimit', 0)
+            CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'scaledValueOfUpperWavePeriodLimit', ITMAX)
+          ENDIF
+
         ENDIF
       ENDIF
 
@@ -357,6 +358,9 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
               ELSE
                 NWINOFF=12-MOD(IH2+3,12)
               ENDIF
+              IF ( ITABPAR == 140251 .AND. IGRIB_VERSION == 1 ) THEN
+                CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'localFlag',4)
+              ENDIF
             ENDIF
 !           in hours
             CALL IGRIB_GET_VALUE(IGRIB_HANDLE,'offsetToEndOf4DvarWindow',IDUM,IRET)
@@ -442,18 +446,24 @@ SUBROUTINE WGRIBENCODE ( IU06, ITEST, &
       ENDIF
 
       IF (ITABPAR == 140251 .OR. LLSPECNOT251) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
+        IF ( IGRIB_VERSION == 1 ) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'directionNumber',IK)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'frequencyNumber',IM)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveDirectionNumber',IK,IERR)
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'waveFrequencyNumber',IM,IERR)
+        ENDIF
       ENDIF
 
 !     ENCODE DATA:
       CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'values',VALUES)
 
-       
-      IF (ITABPAR == 140251 .OR. LLSPECNOT251 ) THEN
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setBitsPerValue',9_JWIM,IERR)
-      ELSE
-        CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setBitsPerValue',16_JWIM,IERR)
+      IF (IGRIB_VERSION == 2) THEN
+        IF (ITABPAR == 140251 .OR. LLSPECNOT251) THEN
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setBitsPerValue',9_JWIM,IERR)
+        ELSE
+          CALL IGRIB_SET_VALUE(IGRIB_HANDLE,'setBitsPerValue',16_JWIM,IERR)
+        ENDIF
       ENDIF
 
       DEALLOCATE(VALUES)

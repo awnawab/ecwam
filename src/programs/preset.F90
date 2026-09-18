@@ -80,7 +80,8 @@ PROGRAM preset
       USE YOWFRED  , ONLY : FR       ,TH       ,IFRE1    , FR1
       USE YOWGRIB_HANDLES , ONLY :NGRIB_HANDLE_WAM_I,NGRIB_HANDLE_WAM_S
       USE YOWGRIBHD, ONLY : PPMISS   ,PPEPS    ,PPREC    ,NTENCODE ,    &
-     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP
+     &            NGRBRESS ,HOPERS   ,PPRESOL  ,LGRHDIFS ,LNEWLVTP ,    &
+     &            NGRIB_VERSION
       USE YOWGRID  , ONLY : DELPHI   ,IJS      , IJL     , NTOTIJ  ,    &
      &            NPROMA_WAM, NCHNK, KIJL4CHNK, IJFROMCHNK,             & 
      &            IJSLOC   ,IJLLOC   ,IJGLOBAL_OFFSET
@@ -190,7 +191,8 @@ PROGRAM preset
      &          ALFA, FM, GAMMA, SA, SB, THETA, FETCH, SWAMPWIND ,      &
      &          USERID, RUNID, PATH, CPATH,                             &
      &          CDATEA, IDELWI, CLTUNIT,                                &
-     &          LLUNSTR, LPREPROC, LGRIBOUT,                            &
+     &          LLUNSTR, LPREPROC,                                      &
+     &          LGRIBOUT, NGRIB_VERSION,                                &
      &          MARSTYPE, YCLASS, YEXPVER, NPROMA_WAM
 
 !     IOPTI : IT SELECTS COLD START SPECTRAL FORM
@@ -260,6 +262,7 @@ IF (LHOOK) CALL DR_HOOK('PRESET',0,ZHOOK_HANDLE)
       LPREPROC =.FALSE.
 
       LGRIBOUT = .TRUE.
+      NGRIB_VERSION = 1
 
       MARSTYPE = 'an'
       YCLASS   = 'rd'
