@@ -191,7 +191,6 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       REAL(KIND=JWRB) :: DEPTHMAX
 
       CHARACTER(LEN=3) :: CITG
-      CHARACTER(LEN=4) :: CSTREAM
       CHARACTER(LEN=256) :: CLFORM
 
       LOGICAL :: LERROR
@@ -1277,7 +1276,7 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
       WRITE(IU06,'("  CURRENT RUN:")')
       WRITE(IU06,'("  GRIB VERSION: ", I4)') NGRIB_VERSION 
       WRITE(IU06,'("  GRIB TABLE..: ", I4)') NLOCGRB
-      WRITE(IU06,'("  STREAM .....: ", A4)') CSTREAM
+      WRITE(IU06,'("  STREAM .....: ", I4)') ISTREAM
       WRITE(IU06,'("  CLASS.......: ", A4)') YCLASS
       WRITE(IU06,'("  EXPERIMENT..: ", A4)') YEXPVER
       IF ( CLDOMAIN == 'g' ) THEN
@@ -1694,35 +1693,39 @@ SUBROUTINE USERIN (IFORCA, LWCUR)
 
       IF (NOUTS > 0 .AND. .NOT.LRESTARTED) THEN
         DO J=1,NOUTS
-          CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
-          IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
-            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-            WRITE(IU06,*) '+                                       +'
-            WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
-            WRITE(IU06,*) '+    ============================       +'
-            WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
-            WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
-            WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
-            WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME  +'
-            WRITE(IU06,*) '+                                       +'
-            WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-          ENDIF
-        ENDDO
-        IF (LLSOURCE) THEN
-          DO J=1,NOUTS
+          IF (LWAMANOUT .OR. COUTS(J) > CDATEF) THEN
             CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
-            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+            IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELPRO) /= 0) THEN
               WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
               WRITE(IU06,*) '+                                       +'
               WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
               WRITE(IU06,*) '+    ============================       +'
               WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
-              WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
-              WRITE(IU06,*) '+ DATE IS : ', COUTS(J)
-              WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+              WRITE(IU06,*) '+ OF A PROPAGATION TIMESTEP.            +'
+              WRITE(IU06,*) '+ DATE IS : ', COUTS(J), ' ISHIFT=',ISHIFT
+              WRITE(IU06,*) '+ PROGRAM WILL IGNORE THIS OUTPUT TIME  +'
               WRITE(IU06,*) '+                                       +'
               WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
-              LERROR = .TRUE.
+            ENDIF
+          ENDIF
+        ENDDO
+        IF (LLSOURCE) THEN
+          DO J=1,NOUTS
+            IF (LWAMANOUT .OR. COUTS(J) > CDATEF) THEN
+              CALL DIFDATE (CDATEA, COUTS(J), ISHIFT)
+              IF (ISHIFT <= 0 .OR. MOD(ISHIFT,IDELT) /= 0) THEN
+                WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+                WRITE(IU06,*) '+                                       +'
+                WRITE(IU06,*) '+    WARNING ERROR IN SUB. USERIN       +'
+                WRITE(IU06,*) '+    ============================       +'
+                WRITE(IU06,*) '+ SPECTRA OUTPUT DATE IS NOT AT THE END +'
+                WRITE(IU06,*) '+ OF A SOURCE TERM TIMESTEP IDELT= ', IDELT
+                WRITE(IU06,*) '+ DATE IS : ', COUTS(J), ' ISHIFT=',ISHIFT
+                WRITE(IU06,*) '+ PROGRAM WILL ABORT '
+                WRITE(IU06,*) '+                                       +'
+                WRITE(IU06,*) '+++++++++++++++++++++++++++++++++++++++++'
+                LERROR = .TRUE.
+              ENDIF
             ENDIF
           ENDDO
         ENDIF
