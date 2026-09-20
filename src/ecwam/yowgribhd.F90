@@ -21,8 +21,6 @@
                                                           !! is used for the sub grid obstruction coeeficient
       INTEGER(KIND=JWIM) :: IMDLGRBID_G=108 
       INTEGER(KIND=JWIM) :: IMDLGRBID_M=208
-      INTEGER(KIND=JWIM) :: IMDLGRBID_G2=110
-      INTEGER(KIND=JWIM) :: IMDLGRBID_M2=210
 
       INTEGER(KIND=JWIM) :: NDATE_TIME_WINDOW_END=0
       INTEGER(KIND=JWIM) :: NWINOFF
