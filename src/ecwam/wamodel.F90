@@ -201,7 +201,7 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
       IF (LHOOK) CALL DR_HOOK('ADVECTION_LOOP',0,ZHOOK_HANDLE_ADVECTION_LOOP)
 
       LPIN = .FALSE.
-#ifdef WAM_HAVE_HIC
+#if defined(WAM_HAVE_HIC) && !defined(__NVCOMPILER_GPU_UNIFIED_MEM)
       LPIN = .TRUE.
 #endif
       IF (.NOT. ASSOCIATED(F_BOUT)) THEN
@@ -315,6 +315,9 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 #endif
         ENDDO
 
+#ifdef WAM_GPU
+        CALL GET_HOST_DATA_RDONLY(BLK2GLO)
+#endif
 
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------

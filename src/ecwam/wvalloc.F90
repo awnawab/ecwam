@@ -47,9 +47,9 @@
 !     1.  ALLOCATE NECESSARY ARRAYS
 !         -------------------------
 
-#ifdef WAM_HAVE_HIC
+#if defined(WAM_HAVE_HIC) && !defined(__NVCOMPILER_GPU_UNIFIED_MEM)
 !.... Enable pinning of fields in page-locked memory
-      INIT_PINNED_VALUE=.TRUE.
+     INIT_PINNED_VALUE=.TRUE.
 #endif
 
       IF (.NOT. WVPRPT%LALLOC)THEN
