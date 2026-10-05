@@ -315,6 +315,9 @@ IF (LHOOK) CALL DR_HOOK('WAMODEL',0,ZHOOK_HANDLE)
 #endif
         ENDDO
 
+#ifdef WAM_GPU
+        CALL GET_HOST_DATA_RDONLY(BLK2GLO)
+#endif
 
 !       1.3 CHECK WHETHER OUTPUT(s) NEEDED
 !           ------------------------------

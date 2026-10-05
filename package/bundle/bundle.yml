@@ -91,6 +91,12 @@ options :
         cmake : >
             ENABLE_CUDA=ON
 
+    - with-cuda-unified-memory :
+        help  : Enable full CUDA Unified Memory with system allocations
+        cmake : >
+            ENABLE_CUDA_UNIFIED=ON
+            ENABLE_MAP_DEVPTR=OFF
+
     - with-hipfort :
         help  : Enable FIELD_API HIPFORT backend
         cmake : >

@@ -262,6 +262,11 @@ build-time via the following bundle option: `--loki-mode=<trafo>`. Direct GPU-to
 passing the `--with-gpu-aware-mpi` option. CPU to GPU data transfers can be accelerated (via pinning of host-side allocations)
 by building with the `--with-cuda` option.
 
+With NVIDIA HPC compilers and a platform supporting full CUDA Unified Memory (such as Grace Hopper),
+`--with-cuda-unified-memory` enables system allocations via `-gpu=mem:unified:nomanagedalloc`.
+Use it alongside `--with-cuda` and `--with-acc`. This option is off by default and preserves Field API's
+explicit host-memory pinning. For a direct CMake build, set `-DENABLE_CUDA_UNIFIED=ON`.
+
 The ecwam-bundle also provides appropriate arch files for the nvhpc suite on the ECMWF ATOS system.
 
 Running

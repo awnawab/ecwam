@@ -148,6 +148,18 @@ if( HAVE_CUDA )
     enable_language( CUDA )
 endif()
 
+### CUDA Unified Memory
+ecbuild_add_option( FEATURE CUDA_UNIFIED
+                    DESCRIPTION "Use full CUDA Unified Memory with system allocations"
+                    DEFAULT OFF
+                    CONDITION HAVE_CUDA AND HAVE_ACC AND CMAKE_Fortran_COMPILER_ID MATCHES "PGI|NVHPC" )
+
+if( HAVE_CUDA_UNIFIED )
+  string( APPEND OpenACC_Fortran_FLAGS " -gpu=mem:unified:nomanagedalloc" )
+  target_compile_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:nomanagedalloc" )
+  target_link_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:nomanagedalloc" )
+endif()
+
 ### check for HIP
 find_package(hipfort COMPONENTS hip)
 ecbuild_add_option( FEATURE HIPFORT
