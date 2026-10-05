@@ -22,10 +22,12 @@ forecast.end:   2023-01-01 06:00:00
 begin: ${forecast.begin}
 end:   ${forecast.end}
 
-nproma: 64
+nproma: 32
 lwamanout: F
 lgribout: F
 lgribin: F
+lsubgrid: F
+ifre1: 3
 
 forcings:
     file:  data/forcings/oper_an_12h_fc_2023010100_36h_O320.grib

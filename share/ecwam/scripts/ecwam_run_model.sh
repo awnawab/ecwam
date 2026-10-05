@@ -319,6 +319,7 @@ cat > wam_namelist << EOF
   LLNORMWAMOUT          = T,
   LLNORMWAMOUT_GLOBAL   = T,
   CNORMWAMOUT_FILE      = "statistics.log",
+  LWAMANOUT             = F,
   ${OUTPUT_FLAGS}
 /
 ${NAWI}
