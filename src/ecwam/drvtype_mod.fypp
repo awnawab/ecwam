@@ -75,6 +75,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 
    CONTAINS
 
+   ! NVIDIA unified memory shares SELF and its pointer descriptors with the GPU.
+   ! Keep Field API view switching and copies, but skip OpenACC attachment.
+
    SUBROUTINE ${obj.upper()}$_ALLOC(SELF, UBOUNDS, LBOUNDS)
       #:set rank = _def['rank']
       TYPE(${obj.upper()}$) :: SELF
@@ -111,7 +114,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
       !$omp target exit data map(release:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
       !$acc exit data detach(SELF%${var.upper()}$)
+#endif
 #endif
       CALL FIELD_DELETE(SELF%F_${var.upper()}$)
       NULLIFY(SELF%F_${var.upper()}$)
@@ -155,7 +160,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
              !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
          ENDIF
              #:endfor
@@ -168,7 +175,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
          !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
              #:endfor
          #:endfor
@@ -203,7 +212,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
              !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
          ENDIF
              #:endfor
@@ -216,7 +227,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
          !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
              #:endfor
          #:endfor
@@ -251,7 +264,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
              !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
              !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
          ENDIF
              #:endfor
@@ -264,7 +279,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
          !$omp target enter data map(to:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
          !$acc enter data attach(SELF%${var.upper()}$)
+#endif
 #endif
              #:endfor
          #:endfor
@@ -376,7 +393,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
              !$omp target exit data map(release:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
 #endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
          ENDIF
@@ -389,7 +408,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
          !$omp target exit data map(release:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
 #endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDONLY(SELF%${var.upper()}$)
              #:endfor
@@ -423,7 +444,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
              !$omp target exit data map(release:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
              !$acc exit data detach(SELF%${var.upper()}$)
+#endif
 #endif
              CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
          ENDIF
@@ -436,7 +459,9 @@ MODULE ${obj.upper()}$_TYPE_MOD
 #ifdef OMPGPU
          !$omp target exit data map(release:SELF%${var.upper()}$)
 #else
+#ifndef __NVCOMPILER_GPU_UNIFIED_MEM
          !$acc exit data detach(SELF%${var.upper()}$)
+#endif
 #endif
          CALL SELF%F_${var.upper()}$%GET_HOST_DATA_RDWR(SELF%${var.upper()}$)
              #:endfor
