@@ -104,14 +104,8 @@ IF (LHOOK) CALL DR_HOOK('PROPAG_WAM',0,ZHOOK_HANDLE)
 !$omp target data map(to:FL1,WAVNUM,CGROUP,OMOSNH2KD,DEPTH,DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) &
 !$omp & map(alloc:FL1_EXT,FL3_EXT,BUFFER_EXT)
 #else
-#ifdef __NVCOMPILER_GPU_UNIFIED_MEM
-!     Field API views are raw CUDA pointers; BLK2GLO is a shared host struct.
-!$acc data deviceptr(FL1,WAVNUM,CGROUP,OMOSNH2KD,DEPTH,DELLAM1,COSPHM1,UCUR,VCUR) &
-!$acc & present(BLK2GLO) create(FL1_EXT,FL3_EXT,BUFFER_EXT)
-#else
 !$acc data present(FL1, WAVNUM, CGROUP, OMOSNH2KD, DEPTH, DELLAM1,COSPHM1,UCUR,VCUR,BLK2GLO) &
 !$acc & create(FL1_EXT,FL3_EXT,BUFFER_EXT)
-#endif
 #endif
       IF (NIBLO > 1) THEN
 

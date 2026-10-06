@@ -58,14 +58,8 @@ SUBROUTINE PROENVHALO (NINF, NSUP,                            &
 ! ----------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('PROENVHALO',0,ZHOOK_HANDLE)
-#ifdef __NVCOMPILER_GPU_UNIFIED_MEM
-!     Field API views are raw CUDA pointers; BUFFER_EXT is native scratch.
-!$acc data deviceptr(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
-!$acc present(BUFFER_EXT)
-#else
 !$acc data present(WAVNUM,CGROUP,OMOSNH2KD,DELLAM1,COSPHM1,DEPTH,UCUR,VCUR) &
 !$acc present(BUFFER_EXT)
-#endif
 
 !!! mapping chuncks to block ONLY for actual grid points !!!!
 #ifdef WAM_GPU
