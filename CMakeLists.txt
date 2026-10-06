@@ -156,8 +156,8 @@ ecbuild_add_option( FEATURE CUDA_UNIFIED
 
 if( HAVE_CUDA_UNIFIED )
   string( APPEND OpenACC_Fortran_FLAGS " -gpu=mem:unified:nomanagedalloc" )
-  target_compile_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:nomanagedalloc" )
-  target_link_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:nomanagedalloc" )
+  target_compile_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:managedalloc" )
+  target_link_options( OpenACC::OpenACC_Fortran INTERFACE "-gpu=mem:unified:managedalloc" )
 endif()
 
 ### check for HIP
