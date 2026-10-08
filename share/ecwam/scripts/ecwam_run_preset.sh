@@ -154,8 +154,8 @@ ifre1=$(read_config ifre1 --default=1)
 forcings_file=$(read_config forcings.file)
 
 opti=1
-fetch=50000.0
-fmax=0.2000000
+fetch=1200.0
+fmax=0.4000000
 lmaskice=$(read_config physics.lmaskice --default=$(read_config lmaskice --default=T))
 
 if [[ $(read_config forcings.sea_ice --default=True) == "True" ]] ; then
